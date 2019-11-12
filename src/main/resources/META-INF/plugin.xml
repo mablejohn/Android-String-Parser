@@ -1,0 +1,49 @@
+<idea-plugin>
+    <id>org.vjapps.rsp.parser</id>
+    <name>RString Parser</name>
+    <vendor email="mablevj@gmail.com" url="http://www.google.com">VJM-Apps</vendor>
+
+    <description><![CDATA[
+    Small utility plugin. Which help to export and import string resource</em>
+    ]]></description>
+
+    <!-- please see http://www.jetbrains.org/intellij/sdk/docs/basics/getting_started/plugin_compatibility.html
+         on how to target different products -->
+    <!-- uncomment to enable plugin in all products
+    <depends>com.intellij.modules.lang</depends>
+    -->
+    <extensions defaultExtensionNs="com.intellij">
+        <!-- Add your extensions here -->
+        <applicationService serviceImplementation="org.rsp.parser.plugin.ArsParserSettings"/>
+    </extensions>
+
+    <actions>
+        <!-- Add your actions here -->
+        <group id="comVjPlugin.SampleMenu" text="Android Strings Parser" description="Android string parser">
+            <add-to-group group-id="ToolsMenu" anchor="last"/>
+
+            <group id="comVjPlugin.ARSGroup"
+                   text="Android Strings Parser"
+                   description="Android string parser"
+                   popup="true">
+
+                <action id="comVjPlugin.ActionImport"
+                        class="org.rsp.parser.action.ActionMain"
+                        text="Import"
+                        description="Import Strings from files">
+
+                    <keyboard-shortcut
+                            keymap="$default"
+                            first-keystroke="shift ctrl A"
+                            second-keystroke="shift ctrl M"/>
+                </action>
+
+                <action id="comVjPlugin.ActionHelp"
+                        class="org.rsp.parser.action.ActionHelp"
+                        text="Help"
+                        description="Help topics">
+                </action>
+            </group>
+        </group>
+    </actions>
+</idea-plugin>
