@@ -87,7 +87,7 @@ public class MainForm extends JPanel implements Consumer<VirtualFile> {
     }
 
     public static void showWindow(Project project, OnActionCompletedListener listener) {
-        JFrame jFrame = new JFrame("Import");
+        JFrame jFrame = new JFrame("");
         jFrame.setContentPane(new MainForm(project, listener, Constant.ActionMode.EXPORT).panelRoot);
         jFrame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
         jFrame.setPreferredSize(new Dimension(600, 475));
@@ -124,6 +124,7 @@ public class MainForm extends JPanel implements Consumer<VirtualFile> {
                         virtualFile -> {
                             textExportSource.setText(virtualFile.getPath());
                             listResult = readResourceFile(virtualFile.getPath());
+                            changeSelectAllCheckState();
                             populateStringList(listResult);
                         },
                         "choose file",
@@ -147,18 +148,31 @@ public class MainForm extends JPanel implements Consumer<VirtualFile> {
         });
         buttonExportCancel.addActionListener(e -> listener.onCancelClicked());
         selectAllCheckBox.addItemListener(e -> {
-            if (e.getStateChange() == ItemEvent.SELECTED) {
-                for (int i = 0; i < tableResource.getRowCount(); i++) {
-                    tableResource.getModel().setValueAt(true, i, Constant.TABLE_COLUMN_SELECTED);
-                }
-            }
-
-            if (e.getStateChange() == ItemEvent.DESELECTED) {
-                for (int i = 0; i < tableResource.getRowCount(); i++) {
-                    tableResource.getModel().setValueAt(false, i, Constant.TABLE_COLUMN_SELECTED);
-                }
+            boolean isSelected = checkSelectAllState(e);
+            for (int i = 0; i < tableResource.getRowCount(); i++) {
+                tableResource.getModel().setValueAt(isSelected, i, Constant.TABLE_COLUMN_SELECTED);
             }
         });
+    }
+
+    private boolean checkSelectAllState(ItemEvent e) {
+        if (e.getStateChange() == ItemEvent.SELECTED) {
+            return true;
+        }
+        if (e.getStateChange() == ItemEvent.DESELECTED) {
+            return false;
+        }
+        return false;
+    }
+
+    private void changeSelectAllCheckState() {
+        if (listResult.size() > 0) {
+            selectAllCheckBox.setSelected(true);
+        }
+    }
+
+    private void changeSelectAllCheckState(boolean selected) {
+        selectAllCheckBox.setSelected(selected);
     }
 
     private void addImportActionListener() {
@@ -242,7 +256,7 @@ public class MainForm extends JPanel implements Consumer<VirtualFile> {
 
         DefaultComboBoxModel<String> comboBoxModel = new DefaultComboBoxModel<>();
         for (int i = 0; i < 7; i++) {
-            comboBoxModel.addElement("Sheet " + i);
+            comboBoxModel.addElement(Constant.TITLE_SHEET + " " + i);
         }
         comboBoxSheet.setModel(comboBoxModel);
         comboBoxSheet.setSelectedIndex(0);
@@ -268,9 +282,9 @@ public class MainForm extends JPanel implements Consumer<VirtualFile> {
         ResTableModel model = new ResTableModel(resourceStrings, null);
         tableResource.setModel(model);
         tableResource.setAutoResizeMode(JTable.AUTO_RESIZE_LAST_COLUMN);
-        tableResource.getColumnModel().getColumn(Constant.TABLE_COLUMN_SELECTED).setMaxWidth(30);
-        tableResource.getColumnModel().getColumn(Constant.TABLE_COLUMN_KEY).setMinWidth(300);
-        tableResource.getColumnModel().getColumn(Constant.TABLE_COLUMN_VALUE).setMinWidth(700);
+        tableResource.getColumnModel().getColumn(Constant.TABLE_COLUMN_SELECTED).setMaxWidth(Constant.TABLE_COLUMN_KEY_WIDTH);
+        tableResource.getColumnModel().getColumn(Constant.TABLE_COLUMN_KEY).setMinWidth(Constant.TABLE_COLUMN_SELECTED_WIDTH);
+        tableResource.getColumnModel().getColumn(Constant.TABLE_COLUMN_VALUE).setMinWidth(Constant.TABLE_COLUMN_VALUE_WIDTH);
         tableResource.setPreferredScrollableViewportSize(tableResource.getPreferredSize());
     }
 

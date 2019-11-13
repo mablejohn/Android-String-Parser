@@ -1,5 +1,6 @@
 package org.rsp.parser.gui.adapter
 
+import org.rsp.parser.gui.constant.Constant
 import javax.swing.DefaultComboBoxModel
 
 class ColumnComboBoxModel(private val columnName: List<Char>) : DefaultComboBoxModel<String>() {
@@ -9,7 +10,7 @@ class ColumnComboBoxModel(private val columnName: List<Char>) : DefaultComboBoxM
      * @return the value at `index`
      */
     override fun getElementAt(index: Int): String {
-        return "Column ${columnName[index]}"
+        return "${Constant.TITLE_COLUMN} ${columnName[index]}"
     }
 
     /**

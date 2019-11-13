@@ -4,14 +4,13 @@ import com.intellij.structuralsearch.UnsupportedPatternException
 import org.rsp.parser.model.ResourceString
 import javax.swing.table.AbstractTableModel
 
-
 class ResTableModel(
         private val resourceList: List<ResourceString>,
         private var columnNames: List<String>? = null
 ) : AbstractTableModel() {
 
     override fun getColumnName(column: Int): String {
-        return this.columnNames?.get(column) ?: "##"
+        return this.columnNames?.get(column) ?: ""
     }
 
     /**
@@ -33,7 +32,7 @@ class ResTableModel(
      * @see .getRowCount
      */
     override fun getColumnCount(): Int {
-        return this.columnNames?.size ?: 0
+        return this.columnNames?.size ?: MIN_COL_COUNT
     }
 
     /**
@@ -86,12 +85,26 @@ class ResTableModel(
         if (value is ResourceString) {
             resourceList[row].isSelected = value.isSelected
             fireTableCellUpdated(row, col)
+        } else if (value is Boolean) {
+            resourceList[row].isSelected = value
+            fireTableCellUpdated(row, col)
         }
     }
 
     init {
         if (null == this.columnNames) {
-            this.columnNames = arrayOf("", "Key", "Value").toMutableList()
+            this.columnNames = arrayOf(
+                    COLUMN_NUMBER,
+                    COLUMN_KEY,
+                    COLUMN_VALUE
+            ).toMutableList()
         }
+    }
+
+    companion object {
+        const val COLUMN_KEY = "Key"
+        const val COLUMN_NUMBER = "No"
+        const val COLUMN_VALUE = "Value"
+        const val MIN_COL_COUNT = 3
     }
 }
