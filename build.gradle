@@ -1,11 +1,11 @@
 plugins {
     id 'java'
-    id 'org.jetbrains.intellij' version '0.4.11'
+    id 'org.jetbrains.intellij' version '0.4.12'
     id "org.jetbrains.kotlin.jvm" version "1.3.50"
 }
 
 group 'org.vjapps.rsp'
-version '1.0-SNAPSHOT'
+version '1.0.0'
 
 repositories {
     mavenCentral()
@@ -13,7 +13,6 @@ repositories {
 }
 
 sourceCompatibility = 1.8
-
 dependencies {
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8"
     implementation "org.jetbrains.kotlin:kotlin-gradle-plugin:1.3.50"
@@ -37,7 +36,4 @@ intellij {
 }
 
 patchPluginXml {
-    changeNotes """
-      Add change notes here.<br>
-      <em>most HTML tags may be used</em>"""
 }

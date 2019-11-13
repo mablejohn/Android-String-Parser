@@ -1,47 +1,62 @@
-<idea-plugin>
+<idea-plugin url="https://www.jetbrains.com/idea">
+
     <id>org.vjapps.rsp.parser</id>
-    <name>RString Parser</name>
-    <vendor email="mablevj@gmail.com" url="http://www.google.com">VJM-Apps</vendor>
+    <name>Android String Parser</name>
+
+    <version>1.0.0</version>
+    <vendor email="mablevj@gmail.com" url="https://github.com/mablejohn/Android-String-Parser.git">VJ-Apps</vendor>
 
     <description><![CDATA[
-    Small utility plugin. Which help to export and import string resource</em>
-    ]]></description>
+        <h1>Alpha release of the plugin. Basic Screen and functionality completed</h1>
+        <br/>
+        <a href="https://github.com/Haehnchen/idea-android-studio-plugin/issues">Issues</a>
+        <br/>
+        <h2>Features</h2>
+        <ul>
+            <li>"Export Android String resource" to Excel file</li>>
+            <li>Import string from excel to "Android String File"</li>
+        </ul>
+        ]]>
+    </description>
 
-    <!-- please see http://www.jetbrains.org/intellij/sdk/docs/basics/getting_started/plugin_compatibility.html
-         on how to target different products -->
-    <!-- uncomment to enable plugin in all products
-    <depends>com.intellij.modules.lang</depends>
-    -->
+    <change-notes>
+        <![CDATA[
+        <h2>1.0.0</h2>
+        <ul>
+            <li>"Export Android String resource" to Excel file</li>>
+            <li>Import string from excel to "Android String File"</li>
+        </ul>
+         ]]>
+    </change-notes>
+
+    <!-- please see http://confluence.jetbrains.com/display/IDEADEV/Build+Number+Ranges for description -->
+    <idea-version since-build="131"/>
+
+    <depends>com.intellij.modules.platform</depends>
+    <depends>org.jetbrains.plugins.gradle.java</depends>
+    <depends>org.jetbrains.kotlin</depends>
+
     <extensions defaultExtensionNs="com.intellij">
-        <!-- Add your extensions here -->
         <applicationService serviceImplementation="org.rsp.parser.plugin.ArsParserSettings"/>
     </extensions>
 
     <actions>
-        <!-- Add your actions here -->
         <group id="comVjPlugin.SampleMenu" text="Android Strings Parser" description="Android string parser">
             <add-to-group group-id="ToolsMenu" anchor="last"/>
 
-            <group id="comVjPlugin.ARSGroup"
-                   text="Android Strings Parser"
-                   description="Android string parser"
+            <group id="comVjPlugin.ARSGroup" text="Android Strings Parser" description="Android string parser"
                    popup="true">
 
-                <action id="comVjPlugin.ActionImport"
-                        class="org.rsp.parser.action.ActionMain"
-                        text="Import"
+                <action id="comVjPlugin.ActionImport" class="org.rsp.parser.action.ActionExport" text="Export Resource"
                         description="Import Strings from files">
-
-                    <keyboard-shortcut
-                            keymap="$default"
-                            first-keystroke="shift ctrl A"
-                            second-keystroke="shift ctrl M"/>
+                    <keyboard-shortcut keymap="$default" first-keystroke="shift ctrl A"
+                                       second-keystroke="shift ctrl I"/>
                 </action>
 
-                <action id="comVjPlugin.ActionHelp"
-                        class="org.rsp.parser.action.ActionHelp"
-                        text="Help"
+                <action id="comVjPlugin.ActionHelp" class="org.rsp.parser.action.ActionImport" text="Import Resource"
                         description="Help topics">
+                    <keyboard-shortcut keymap="$default" first-keystroke="shift ctrl A"
+                                       second-keystroke="shift ctrl E"/>
                 </action>
             </group>
         </group>

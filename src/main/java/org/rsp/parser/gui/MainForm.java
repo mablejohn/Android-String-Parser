@@ -27,10 +27,8 @@ import java.util.List;
 import static org.rsp.parser.plugin.ArsParserSettings.PLUGIN_NAME;
 import static org.rsp.parser.util.PluginUtilKt.showErrorDialog;
 
-
 @SuppressWarnings("unused")
-public class MainForm extends JPanel
-        implements Consumer<VirtualFile> {
+public class MainForm extends JPanel implements Consumer<VirtualFile> {
 
     private final Project project;
     public JPanel panelRoot;
@@ -76,12 +74,13 @@ public class MainForm extends JPanel
     private Constant.ActionMode actionMode;
     private OnActionCompletedListener listener;
 
-    MainForm(Project project, OnActionCompletedListener listener) {
+    MainForm(Project project, OnActionCompletedListener listener, Constant.ActionMode actionMode) {
 
-        this.actionMode = Constant.ActionMode.EXPORT;
+        this.actionMode = actionMode;
         this.project = project;
         this.listener = listener;
 
+        selectLandingTab();
         addExportActionListener();
         addImportActionListener();
         addTabChangeListener();
@@ -89,13 +88,27 @@ public class MainForm extends JPanel
 
     public static void showWindow(Project project, OnActionCompletedListener listener) {
         JFrame jFrame = new JFrame("Import");
-        jFrame.setContentPane(new MainForm(project, listener).panelRoot);
+        jFrame.setContentPane(new MainForm(project, listener, Constant.ActionMode.EXPORT).panelRoot);
         jFrame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
         jFrame.setPreferredSize(new Dimension(600, 475));
         jFrame.setResizable(false);
         jFrame.pack();
         jFrame.setLocationRelativeTo(null);
         jFrame.setVisible(true);
+    }
+
+    private void selectLandingTab() {
+
+        int index = tabPane.getSelectedIndex();
+        tabPane.setSelectedIndex(this.actionMode.getIndex());
+        tabPane.setEnabledAt(this.actionMode.getIndex(), true);
+
+        if (index == Constant.ActionMode.IMPORT.getIndex()) {
+            loadExcelSheet();
+            loadKeyColumns();
+            loadValueColumns();
+            loadSuggestionColumns();
+        }
     }
 
     @Override
@@ -132,9 +145,7 @@ public class MainForm extends JPanel
                 listener.onExPortClicked();
             }
         });
-        buttonExportCancel.addActionListener(e -> {
-            listener.onCancelClicked();
-        });
+        buttonExportCancel.addActionListener(e -> listener.onCancelClicked());
         selectAllCheckBox.addItemListener(e -> {
             if (e.getStateChange() == ItemEvent.SELECTED) {
                 for (int i = 0; i < tableResource.getRowCount(); i++) {
@@ -189,9 +200,7 @@ public class MainForm extends JPanel
                 }
             }
         });
-        buttonImportCancel.addActionListener(e -> {
-            listener.onCancelClicked();
-        });
+        buttonImportCancel.addActionListener(e -> listener.onCancelClicked());
     }
 
     private void addTabChangeListener() {
