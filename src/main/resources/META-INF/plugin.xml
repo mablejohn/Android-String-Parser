@@ -3,7 +3,7 @@
     <id>org.vjapps.rsp.parser</id>
     <name>Android String Parser</name>
 
-    <version>1.0.0</version>
+    <version>1.0.1</version>
     <vendor email="mablevj@gmail.com" url="https://github.com/mablejohn/Android-String-Parser.git">VJ-Apps</vendor>
 
     <description><![CDATA[
@@ -25,6 +25,11 @@
         <ul>
             <li>"Export Android String resource" to Excel file</li>>
             <li>Import string from excel to "Android String File"</li>
+        </ul>
+        <h2>1.0.1</h2>
+        <ul>
+            <li>Plugin is compatible with Android Studio</li>
+            <li>UI issue fix</li>
         </ul>
          ]]>
     </change-notes>

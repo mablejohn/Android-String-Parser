@@ -22,7 +22,7 @@ apply plugin: 'kotlin'
 apply plugin: 'kotlin-kapt'
 
 group 'org.vjapps.rsp'
-version '1.0.0'
+version '1.0.1'
 
 repositories {
     mavenCentral()
