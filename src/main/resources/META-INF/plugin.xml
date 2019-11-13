@@ -30,11 +30,7 @@
     </change-notes>
 
     <!-- please see http://confluence.jetbrains.com/display/IDEADEV/Build+Number+Ranges for description -->
-    <idea-version since-build="131"/>
-
-    <depends>com.intellij.modules.platform</depends>
-    <depends>org.jetbrains.plugins.gradle.java</depends>
-    <depends>org.jetbrains.kotlin</depends>
+    <depends>com.intellij.modules.lang</depends>
 
     <extensions defaultExtensionNs="com.intellij">
         <applicationService serviceImplementation="org.rsp.parser.plugin.ArsParserSettings"/>

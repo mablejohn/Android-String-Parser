@@ -11,7 +11,7 @@ class Constant {
         const val TABLE_COLUMN_VALUE = 2
         const val TABLE_COLUMN_VALUE_WIDTH = 700
 
-        const val EXCEL_OUT_PATH = "Test.xls"
+        const val EXCEL_OUT_PATH = "String.xls"
 
         const val TITLE_COLUMN = "Column"
         const val TITLE_SHEET = "Sheet"

@@ -25,10 +25,13 @@ import java.io.IOException;
 import java.util.List;
 
 import static org.rsp.parser.plugin.ArsParserSettings.PLUGIN_NAME;
+import static org.rsp.parser.util.FileDescriptor.FILE_CHOOSER_DESCRIPTION;
+import static org.rsp.parser.util.FileDescriptor.FILE_CHOOSER_TITLE;
 import static org.rsp.parser.util.PluginUtilKt.showErrorDialog;
 
 @SuppressWarnings("unused")
-public class MainForm extends JPanel implements Consumer<VirtualFile> {
+public class MainForm extends JPanel implements Consumer<VirtualFile>,
+        ResTableModel.ColumnDataChanged {
 
     private final Project project;
     public JPanel panelRoot;
@@ -127,14 +130,14 @@ public class MainForm extends JPanel implements Consumer<VirtualFile> {
                             changeSelectAllCheckState();
                             populateStringList(listResult);
                         },
-                        "choose file",
-                        "");
+                        FILE_CHOOSER_TITLE,
+                        FILE_CHOOSER_DESCRIPTION);
             }
         });
         buttonBrowseDestination.addActionListener(e -> {
             if (null != project) {
                 VirtualFile virtualFile = new FileDescriptor()
-                        .browseSingleFolder(project, "choose file", "");
+                        .browseSingleFolder(project, FILE_CHOOSER_TITLE, FILE_CHOOSER_DESCRIPTION);
                 if (virtualFile != null && virtualFile.isDirectory()) {
                     textExportDestination.setText(virtualFile.getCanonicalPath());
                 }
@@ -144,6 +147,7 @@ public class MainForm extends JPanel implements Consumer<VirtualFile> {
             if (validateExport()) {
                 exportResourceString();
                 listener.onExPortClicked();
+
             }
         });
         buttonExportCancel.addActionListener(e -> listener.onCancelClicked());
@@ -181,7 +185,7 @@ public class MainForm extends JPanel implements Consumer<VirtualFile> {
                 new FileDescriptor().browseSingleFile(
                         project,
                         virtualFile -> textImportSource.setText(virtualFile.getPath()),
-                        "choose file", "");
+                        FILE_CHOOSER_TITLE, FILE_CHOOSER_DESCRIPTION);
             }
         });
         buttonImportDestinationBrowse.addActionListener(e -> {
@@ -189,7 +193,7 @@ public class MainForm extends JPanel implements Consumer<VirtualFile> {
                 new FileDescriptor().browseSingleFile(
                         project,
                         virtualFile -> textImportDestination.setText(virtualFile.getPath()),
-                        "choose file", "");
+                        FILE_CHOOSER_TITLE, FILE_CHOOSER_DESCRIPTION);
             }
         });
         buttonImport.addActionListener(e -> {
@@ -279,7 +283,7 @@ public class MainForm extends JPanel implements Consumer<VirtualFile> {
 
     private void populateStringList(List<ResourceString> resourceStrings) {
 
-        ResTableModel model = new ResTableModel(resourceStrings, null);
+        ResTableModel model = new ResTableModel(this, resourceStrings, null);
         tableResource.setModel(model);
         tableResource.setAutoResizeMode(JTable.AUTO_RESIZE_LAST_COLUMN);
         tableResource.getColumnModel().getColumn(Constant.TABLE_COLUMN_SELECTED).setMaxWidth(Constant.TABLE_COLUMN_KEY_WIDTH);
@@ -323,5 +327,30 @@ public class MainForm extends JPanel implements Consumer<VirtualFile> {
             return false;
         }
         return true;
+    }
+
+    @Override
+    public void onColumnDataChanged(boolean checked, int row, int column) {
+        /*if (!checked) {
+            changeSelectAllCheckState(false);
+            return;
+        }
+
+        if (null == listResult)
+            return;
+
+        boolean isSelectAll = true;
+        for (ResourceString resourceString : listResult) {
+
+            if (!resourceString.isSelected()) {
+                isSelectAll = false;
+                changeSelectAllCheckState(false);
+                break;
+            }
+        }
+
+        if (isSelectAll) {
+            changeSelectAllCheckState(true);
+        }*/
     }
 }

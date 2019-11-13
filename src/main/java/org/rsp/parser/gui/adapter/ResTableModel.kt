@@ -1,16 +1,46 @@
 package org.rsp.parser.gui.adapter
 
 import com.intellij.structuralsearch.UnsupportedPatternException
+import org.rsp.parser.gui.constant.Constant
 import org.rsp.parser.model.ResourceString
+import javax.swing.event.TableModelEvent
 import javax.swing.table.AbstractTableModel
 
+
 class ResTableModel(
+        private val listener: ColumnDataChanged,
         private val resourceList: List<ResourceString>,
         private var columnNames: List<String>? = null
 ) : AbstractTableModel() {
 
     override fun getColumnName(column: Int): String {
         return this.columnNames?.get(column) ?: ""
+    }
+
+    /**
+     * Forwards the given notification event to all
+     * `TableModelListeners` that registered
+     * themselves as listeners for this table model.
+     *
+     * @param e  the event to be forwarded
+     *
+     * @see .addTableModelListener
+     *
+     * @see TableModelEvent
+     *
+     * @see [EventListenerList]
+     */
+    override fun fireTableChanged(e: TableModelEvent?) {
+        e?.let {
+            if (it.column == Constant.TABLE_COLUMN_SELECTED) {
+                val model: ResTableModel = it.source as ResTableModel
+                listener.onColumnDataChanged(
+                        model.getValueAt(it.firstRow, it.column) as Boolean,
+                        it.firstRow,
+                        it.column
+                )
+            }
+        }
     }
 
     /**
@@ -78,9 +108,9 @@ class ResTableModel(
     }
 
     /*
-     * Don't need to implement this method unless your table's
-     * data can change.
-     */
+         * Don't need to implement this method unless your table's
+         * data can change.
+         */
     override fun setValueAt(value: Any?, row: Int, col: Int) {
         if (value is ResourceString) {
             resourceList[row].isSelected = value.isSelected
@@ -106,5 +136,9 @@ class ResTableModel(
         const val COLUMN_NUMBER = "No"
         const val COLUMN_VALUE = "Value"
         const val MIN_COL_COUNT = 3
+    }
+
+    interface ColumnDataChanged {
+        fun onColumnDataChanged(checked: Boolean, row: Int, column: Int)
     }
 }

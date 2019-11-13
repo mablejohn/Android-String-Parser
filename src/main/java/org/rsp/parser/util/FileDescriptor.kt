@@ -12,7 +12,7 @@ class FileDescriptor {
 
     fun browseSingleFile(project: Project,
                          callback: Consumer<VirtualFile>,
-                         title: String = "Choose File", description: String = "") {
+                         title: String = FILE_CHOOSER_TITLE, description: String = FILE_CHOOSER_DESCRIPTION) {
         FileChooser.chooseFile(FileChooserDescriptorFactory
                 .createSingleFileDescriptor()
                 .withTitle(title)
@@ -24,8 +24,15 @@ class FileDescriptor {
     }
 
     fun browseSingleFolder(project: Project,
-                           title: String = "Choose Folder", description: String = ""): VirtualFile? {
+                           title: String =
+                                   FOLDER_CHOOSER_TITLE, description: String = FILE_CHOOSER_DESCRIPTION): VirtualFile? {
         return FileChooser.chooseFile(FileChooserDescriptorFactory.createSingleFolderDescriptor(),
                 project, null)
+    }
+
+    companion object {
+        const val FILE_CHOOSER_TITLE = "Choose File"
+        const val FOLDER_CHOOSER_TITLE = "Choose Folder"
+        const val FILE_CHOOSER_DESCRIPTION = ""
     }
 }
