@@ -84,9 +84,19 @@ public class MainForm extends JPanel implements Consumer<VirtualFile>,
         this.listener = listener;
 
         selectLandingTab();
+
         addExportActionListener();
         addImportActionListener();
+
         addTabChangeListener();
+        addToGroup();
+    }
+
+    private void addToGroup() {
+        ButtonGroup buttonGroup = new ButtonGroup();
+        buttonGroup.add(radioExcel);
+        buttonGroup.add(radioWord);
+        buttonGroup.add(radioCsv);
     }
 
     public static void showWindow(Project project, OnActionCompletedListener listener) {
