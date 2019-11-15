@@ -53,16 +53,16 @@
                   <component id="7eb65" class="javax.swing.JRadioButton" binding="radioWord">
                     <constraints/>
                     <properties>
-                      <enabled value="false"/>
+                      <enabled value="true"/>
                       <margin top="10" left="2" bottom="2" right="2"/>
                       <selected value="false"/>
-                      <text value="Word"/>
+                      <text value="Google Sheet"/>
                     </properties>
                   </component>
                   <component id="99f5d" class="javax.swing.JRadioButton" binding="radioCsv">
                     <constraints/>
                     <properties>
-                      <enabled value="false"/>
+                      <enabled value="true"/>
                       <margin top="10" left="2" bottom="2" right="2"/>
                       <selected value="false"/>
                       <text value="CSV"/>

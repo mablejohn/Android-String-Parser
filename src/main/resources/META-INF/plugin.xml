@@ -52,13 +52,13 @@
             <group id="comVjPlugin.ARSGroup" text="Android Strings Parser" description="Android string parser"
                    popup="true">
 
-                <action id="comVjPlugin.ActionImport" class="org.rsp.parser.action.ActionExport" text="Export Resource"
+                <action id="comVjPlugin.ActionExport" class="org.rsp.parser.action.ActionExport" text="Export Resource"
                         description="Import Strings from files">
                     <keyboard-shortcut keymap="$default" first-keystroke="shift ctrl A"
                                        second-keystroke="shift ctrl I"/>
                 </action>
 
-                <action id="comVjPlugin.ActionHelp" class="org.rsp.parser.action.ActionImport" text="Import Resource"
+                <action id="comVjPlugin.ActionImport" class="org.rsp.parser.action.ActionImport" text="Import Resource"
                         description="Help topics">
                     <keyboard-shortcut keymap="$default" first-keystroke="shift ctrl A"
                                        second-keystroke="shift ctrl E"/>

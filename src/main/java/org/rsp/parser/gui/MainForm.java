@@ -1,9 +1,11 @@
 package org.rsp.parser.gui;
 
+import com.google.api.services.sheets.v4.Sheets;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.util.Consumer;
 import org.jetbrains.annotations.Nullable;
+import org.rsp.parser.contract.OnActionCompletedListener;
 import org.rsp.parser.gui.adapter.ColumnComboBoxModel;
 import org.rsp.parser.gui.adapter.ResTableModel;
 import org.rsp.parser.gui.constant.Constant;
@@ -11,6 +13,9 @@ import org.rsp.parser.helper.ReadWriteExcelFile;
 import org.rsp.parser.helper.XSSReadWriteXmlFiles;
 import org.rsp.parser.helper.XmlInterpreter;
 import org.rsp.parser.model.*;
+import org.rsp.parser.notification.NotificationBus;
+import org.rsp.parser.sheet.SheetsQuickstart;
+import org.rsp.parser.sheet.manage.SpreadSheetManager;
 import org.rsp.parser.util.FileDescriptor;
 import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
@@ -22,6 +27,7 @@ import javax.xml.parsers.ParserConfigurationException;
 import java.awt.*;
 import java.awt.event.ItemEvent;
 import java.io.IOException;
+import java.security.GeneralSecurityException;
 import java.util.List;
 
 import static org.rsp.parser.plugin.ArsParserSettings.PLUGIN_NAME;
@@ -76,12 +82,14 @@ public class MainForm extends JPanel implements Consumer<VirtualFile>,
     private List<ResourceString> listResult;
     private Constant.ActionMode actionMode;
     private OnActionCompletedListener listener;
+    private NotificationBus notificationBus;
 
     MainForm(Project project, OnActionCompletedListener listener, Constant.ActionMode actionMode) {
 
         this.actionMode = actionMode;
         this.project = project;
         this.listener = listener;
+        this.notificationBus = new NotificationBus(this.project);
 
         selectLandingTab();
 
@@ -90,13 +98,15 @@ public class MainForm extends JPanel implements Consumer<VirtualFile>,
 
         addTabChangeListener();
         addToGroup();
-    }
-
-    private void addToGroup() {
-        ButtonGroup buttonGroup = new ButtonGroup();
-        buttonGroup.add(radioExcel);
-        buttonGroup.add(radioWord);
-        buttonGroup.add(radioCsv);
+        radioWord.addActionListener(e -> {
+            try {
+                Sheets service = SheetsQuickstart.main();
+                SpreadSheetManager sheetManager = new SpreadSheetManager(service);
+                sheetManager.create("String");
+            } catch (IOException | GeneralSecurityException ex) {
+                showErrorDialog(project, ex.getMessage(), PLUGIN_NAME);
+            }
+        });
     }
 
     public static void showWindow(Project project, OnActionCompletedListener listener) {
@@ -108,6 +118,13 @@ public class MainForm extends JPanel implements Consumer<VirtualFile>,
         jFrame.pack();
         jFrame.setLocationRelativeTo(null);
         jFrame.setVisible(true);
+    }
+
+    private void addToGroup() {
+        ButtonGroup buttonGroup = new ButtonGroup();
+        buttonGroup.add(radioExcel);
+        buttonGroup.add(radioWord);
+        buttonGroup.add(radioCsv);
     }
 
     private void selectLandingTab() {
@@ -319,10 +336,12 @@ public class MainForm extends JPanel implements Consumer<VirtualFile>,
 
     private boolean validateImport() {
         if (textImportSource.getText().isEmpty()) {
-            showErrorDialog(project, "Source file path required", PLUGIN_NAME);
+            //showErrorDialog(project, "Source file path required", PLUGIN_NAME);
+            notificationBus.postError("Source file path required");
             return false;
         } else if (textImportDestination.getText().isEmpty()) {
-            showErrorDialog(project, "Destination file path required", PLUGIN_NAME);
+            //showErrorDialog(project, "Destination file path required", PLUGIN_NAME);
+            notificationBus.postError("Destination path required");
             return false;
         }
         return true;
@@ -330,10 +349,12 @@ public class MainForm extends JPanel implements Consumer<VirtualFile>,
 
     private boolean validateExport() {
         if (textExportSource.getText().isEmpty()) {
-            showErrorDialog(project, "Source file path required", PLUGIN_NAME);
+            //showErrorDialog(project, "Source file path required", PLUGIN_NAME);
+            notificationBus.postError("Source file path required");
             return false;
         } else if (textExportDestination.getText().isEmpty()) {
-            showErrorDialog(project, "Destination path required", PLUGIN_NAME);
+            //showErrorDialog(project, "Destination path required", PLUGIN_NAME);
+            notificationBus.postError("Destination path required");
             return false;
         }
         return true;

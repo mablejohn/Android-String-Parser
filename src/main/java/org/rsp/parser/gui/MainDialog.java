@@ -1,6 +1,7 @@
 package org.rsp.parser.gui;
 
 import com.intellij.openapi.project.Project;
+import org.rsp.parser.contract.OnActionCompletedListener;
 import org.rsp.parser.gui.constant.Constant;
 
 import javax.swing.*;
