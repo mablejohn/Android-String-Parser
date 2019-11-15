@@ -49,6 +49,7 @@ compileTestKotlin {
 
 dependencies {
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlin_version"
+    implementation "org.jetbrains.kotlin:kotlin-runtime:${kotlin_version}"
     implementation "org.apache.poi:poi-ooxml:${poi_version}"
     implementation "org.apache.xmlbeans:xmlbeans:${xml_beans}"
     implementation 'com.fasterxml:aalto-xml:1.0.0'
