@@ -10,18 +10,21 @@ import com.intellij.openapi.project.Project
 import org.rsp.parser.plugin.ArsParserSettings.Companion.PLUGIN_NAME
 import javax.swing.event.HyperlinkEvent
 
-class NotificationBus(private val project: Project) {
+
+object NotificationBus {
 
     private val errors = NotificationGroup.balloonGroup("android_string_parser_error")
     private val notificationListener = NotificationListener { notification: Notification?, event: HyperlinkEvent? -> }
     private val verbos = NotificationGroup.logOnlyGroup("android_string_parser_verbos")
 
-    fun postError(message: String) {
-        sendNotification(message, NotificationType.ERROR, errors)
+    @JvmStatic
+    fun postError(project: Project, message: String) {
+        sendNotification(project, message, NotificationType.ERROR, errors)
     }
 
-    fun postInfo(message: String) {
-        sendNotification(message, NotificationType.INFORMATION, verbos)
+    @JvmStatic
+    fun postInfo(project: Project, message: String) {
+        sendNotification(project, message, NotificationType.INFORMATION, verbos)
     }
 
     private fun escapeString(string: String): String {
@@ -29,6 +32,7 @@ class NotificationBus(private val project: Project) {
     }
 
     private fun sendNotification(
+            project: Project,
             message: String,
             notificationType: NotificationType?,
             notificationGroup: NotificationGroup

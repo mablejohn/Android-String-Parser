@@ -30,10 +30,8 @@ import java.io.IOException;
 import java.security.GeneralSecurityException;
 import java.util.List;
 
-import static org.rsp.parser.plugin.ArsParserSettings.PLUGIN_NAME;
 import static org.rsp.parser.util.FileDescriptor.FILE_CHOOSER_DESCRIPTION;
 import static org.rsp.parser.util.FileDescriptor.FILE_CHOOSER_TITLE;
-import static org.rsp.parser.util.PluginUtilKt.showErrorDialog;
 
 @SuppressWarnings("unused")
 public class MainForm extends JPanel implements Consumer<VirtualFile>,
@@ -82,14 +80,13 @@ public class MainForm extends JPanel implements Consumer<VirtualFile>,
     private List<ResourceString> listResult;
     private Constant.ActionMode actionMode;
     private OnActionCompletedListener listener;
-    private NotificationBus notificationBus;
+    private ResTableModel resTableModel;
 
     MainForm(Project project, OnActionCompletedListener listener, Constant.ActionMode actionMode) {
 
         this.actionMode = actionMode;
         this.project = project;
         this.listener = listener;
-        this.notificationBus = new NotificationBus(this.project);
 
         selectLandingTab();
 
@@ -104,7 +101,8 @@ public class MainForm extends JPanel implements Consumer<VirtualFile>,
                 SpreadSheetManager sheetManager = new SpreadSheetManager(service);
                 sheetManager.create("String");
             } catch (IOException | GeneralSecurityException ex) {
-                showErrorDialog(project, ex.getMessage(), PLUGIN_NAME);
+                //showErrorDialog(project, ex.getMessage(), PLUGIN_NAME);
+                NotificationBus.postInfo(project, ex.getMessage());
             }
         });
     }
@@ -171,18 +169,25 @@ public class MainForm extends JPanel implements Consumer<VirtualFile>,
             }
         });
         buttonExportOK.addActionListener(e -> {
+
             if (validateExport()) {
+
                 exportResourceString();
                 listener.onExPortClicked();
 
+                NotificationBus.postInfo(project, "Export completed successfully.");
+                clearExportTab();
             }
         });
         buttonExportCancel.addActionListener(e -> listener.onCancelClicked());
         selectAllCheckBox.addItemListener(e -> {
-            boolean isSelected = checkSelectAllState(e);
-            for (int i = 0; i < tableResource.getRowCount(); i++) {
-                tableResource.getModel().setValueAt(isSelected, i, Constant.TABLE_COLUMN_SELECTED);
-            }
+            EventQueue.invokeLater(() -> {
+                boolean isSelected = checkSelectAllState(e);
+                for (int i = 0; i < tableResource.getRowCount(); i++) {
+                    tableResource.getModel().setValueAt(isSelected, i, Constant.TABLE_COLUMN_SELECTED);
+                }
+                resTableModel.notify();
+            });
         });
     }
 
@@ -239,9 +244,13 @@ public class MainForm extends JPanel implements Consumer<VirtualFile>,
                     XSSReadWriteXmlFiles xmlReadWrite = new XSSReadWriteXmlFiles();
                     xmlReadWrite.writeToFile(new ResourceFile(textImportDestination.getText(), strings));
                     listener.onImportClicked();
+
+                    clearImportTab();
+                    NotificationBus.postInfo(project, "Import completed successfully.");
+
                 } catch (IOException | ParserConfigurationException | SAXException ex) {
-                    showErrorDialog(project, ex.getMessage(), PLUGIN_NAME);
-                    ex.printStackTrace();
+                    //showErrorDialog(project, ex.getMessage(), PLUGIN_NAME);
+                    NotificationBus.postInfo(project, ex.getMessage());
                 }
             }
         });
@@ -277,9 +286,9 @@ public class MainForm extends JPanel implements Consumer<VirtualFile>,
             String path = textExportDestination.getText() + "/" + Constant.EXCEL_OUT_PATH;
             ExcelWriteFile excelData = new ExcelWriteFile(path, listResult);
             writeExcelFile.writeXLSFile(excelData);
-        } catch (IOException e) {
-            showErrorDialog(project, e.getMessage(), PLUGIN_NAME);
-            e.printStackTrace();
+        } catch (IOException ex) {
+            //showErrorDialog(project, e.getMessage(), PLUGIN_NAME);
+            NotificationBus.postInfo(project, ex.getMessage());
         }
     }
 
@@ -310,11 +319,16 @@ public class MainForm extends JPanel implements Consumer<VirtualFile>,
 
     private void populateStringList(List<ResourceString> resourceStrings) {
 
-        ResTableModel model = new ResTableModel(this, resourceStrings, null);
-        tableResource.setModel(model);
+        if (null == resTableModel) {
+            resTableModel = new ResTableModel(this, resourceStrings, null);
+        } else {
+            //resTableModel.removeAll();
+            resTableModel.setModel(resourceStrings);
+        }
+        tableResource.setModel(resTableModel);
         tableResource.setAutoResizeMode(JTable.AUTO_RESIZE_LAST_COLUMN);
-        tableResource.getColumnModel().getColumn(Constant.TABLE_COLUMN_SELECTED).setMaxWidth(Constant.TABLE_COLUMN_KEY_WIDTH);
-        tableResource.getColumnModel().getColumn(Constant.TABLE_COLUMN_KEY).setMinWidth(Constant.TABLE_COLUMN_SELECTED_WIDTH);
+        tableResource.getColumnModel().getColumn(Constant.TABLE_COLUMN_SELECTED).setMaxWidth(Constant.TABLE_COLUMN_SELECTED_WIDTH);
+        tableResource.getColumnModel().getColumn(Constant.TABLE_COLUMN_KEY).setMinWidth(Constant.TABLE_COLUMN_KEY_WIDTH);
         tableResource.getColumnModel().getColumn(Constant.TABLE_COLUMN_VALUE).setMinWidth(Constant.TABLE_COLUMN_VALUE_WIDTH);
         tableResource.setPreferredScrollableViewportSize(tableResource.getPreferredSize());
     }
@@ -327,9 +341,9 @@ public class MainForm extends JPanel implements Consumer<VirtualFile>,
             NodeList nodeList = xmlReader.readFile(path, XSSReadWriteXmlFiles.xPathRoot);
             XmlInterpreter interpreter = new XmlInterpreter();
             return interpreter.interpret(nodeList);
-        } catch (ParserConfigurationException | SAXException | IOException e) {
-            showErrorDialog(project, e.getMessage(), PLUGIN_NAME);
-            e.printStackTrace();
+        } catch (ParserConfigurationException | SAXException | IOException ex) {
+            //showErrorDialog(project, e.getMessage(), PLUGIN_NAME);
+            NotificationBus.postInfo(project, ex.getMessage());
         }
         return null;
     }
@@ -337,24 +351,38 @@ public class MainForm extends JPanel implements Consumer<VirtualFile>,
     private boolean validateImport() {
         if (textImportSource.getText().isEmpty()) {
             //showErrorDialog(project, "Source file path required", PLUGIN_NAME);
-            notificationBus.postError("Source file path required");
+            NotificationBus.postError(project, "Source file path required");
             return false;
         } else if (textImportDestination.getText().isEmpty()) {
             //showErrorDialog(project, "Destination file path required", PLUGIN_NAME);
-            notificationBus.postError("Destination path required");
+            NotificationBus.postError(project, "Destination path required");
             return false;
         }
         return true;
     }
 
+    private void clearExportTab() {
+        textExportSource.setText("");
+        textExportDestination.setText("");
+        selectAllCheckBox.setSelected(false);
+
+        resTableModel.removeAll();
+        tableResource.removeNotify();
+    }
+
+    private void clearImportTab() {
+        textImportSource.setText("");
+        textImportDestination.setText("");
+    }
+
     private boolean validateExport() {
         if (textExportSource.getText().isEmpty()) {
             //showErrorDialog(project, "Source file path required", PLUGIN_NAME);
-            notificationBus.postError("Source file path required");
+            NotificationBus.postError(project, "Source file path required");
             return false;
         } else if (textExportDestination.getText().isEmpty()) {
             //showErrorDialog(project, "Destination path required", PLUGIN_NAME);
-            notificationBus.postError("Destination path required");
+            NotificationBus.postError(project, "Destination path required");
             return false;
         }
         return true;
