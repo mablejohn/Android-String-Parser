@@ -71,9 +71,12 @@ class ReadWriteExcelFile {
         val sheet: HSSFSheet = wb.createSheet(excelData.sheetName)
 
         for (row in excelData.data.indices) {
-            val hssfRow: HSSFRow = sheet.createRow(row)
-            //iterating c number of columns
+
             val dataRow = excelData.data[row]
+            if (!dataRow.isSelected)
+                continue
+
+            val hssfRow: HSSFRow = sheet.createRow(row)
             for (column in 0 until COLUMN_SUGGESTION_INDEX) {
                 val cell: HSSFCell = hssfRow.createCell(column)
                 if (column == COLUMN_KEY_INDEX) {
