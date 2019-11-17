@@ -9,7 +9,7 @@ import javax.swing.table.AbstractTableModel
 
 class ResTableModel(
         private val listener: ColumnDataChanged,
-        private val resourceList: List<ResourceString>,
+        private var resourceList: List<ResourceString>,
         private var columnNames: List<String>? = null
 ) : AbstractTableModel() {
 
@@ -114,10 +114,10 @@ class ResTableModel(
     override fun setValueAt(value: Any?, row: Int, col: Int) {
         if (value is ResourceString) {
             resourceList[row].isSelected = value.isSelected
-            fireTableCellUpdated(row, col)
+            //fireTableCellUpdated(row, col)
         } else if (value is Boolean) {
             resourceList[row].isSelected = value
-            fireTableCellUpdated(row, col)
+            //fireTableCellUpdated(row, col)
         }
     }
 
@@ -129,6 +129,14 @@ class ResTableModel(
                     COLUMN_VALUE
             ).toMutableList()
         }
+    }
+
+    fun removeAll() {
+        this.resourceList = listOf()
+    }
+
+    fun setModel(resourceList: List<ResourceString>) {
+        this.resourceList = resourceList
     }
 
     companion object {
