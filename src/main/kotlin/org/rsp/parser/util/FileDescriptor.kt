@@ -11,7 +11,6 @@ import com.intellij.util.Consumer
 
 class FileDescriptor {
 
-
     fun browseSingleFile(project: Project,
                          callback: Consumer<VirtualFile>,
                          title: String = FILE_CHOOSER_TITLE,
@@ -49,8 +48,8 @@ class FileDescriptor {
     }
 
     companion object {
+        const val FILE_CHOOSER_DESCRIPTION = ""
         const val FILE_CHOOSER_TITLE = "Choose File"
         const val FOLDER_CHOOSER_TITLE = "Choose Folder"
-        const val FILE_CHOOSER_DESCRIPTION = ""
     }
 }

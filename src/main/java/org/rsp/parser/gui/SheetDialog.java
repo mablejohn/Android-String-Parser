@@ -59,7 +59,7 @@ public class SheetDialog extends JDialog {
     private void addAuthenticateListener(Project project) {
         authenticateButton.addActionListener(e -> {
             try {
-                Sheets service = SheetsQuickstart.main();
+                Sheets service = SheetsQuickstart.authorizeApiClient();
             } catch (IOException | GeneralSecurityException ex) {
                 showErrorDialog(project, ex.getMessage(), PLUGIN_NAME);
             }

@@ -1,3 +1,5 @@
+@file:Suppress("unused")
+
 package org.rsp.parser.util
 
 import com.intellij.execution.ExecutionManager
@@ -20,15 +22,28 @@ import java.awt.BorderLayout
 import javax.swing.Icon
 import javax.swing.JPanel
 
-fun showDialog(project: Project?, message: String, title: String) {
+fun showDialog(
+        project: Project?,
+        message: String,
+        title: String
+) {
     Messages.showMessageDialog(project, message, title, Messages.getInformationIcon())
 }
 
-fun showErrorDialog(project: Project?, message: String, title: String) {
+fun showErrorDialog(
+        project: Project?,
+        message: String,
+        title: String
+) {
     Messages.showMessageDialog(project, message, title, Messages.getErrorIcon())
 }
 
-private fun showInConsole(message: String, consoleTitle: String, project: Project, contentType: ConsoleViewContentType) {
+private fun showInConsole(
+        message: String,
+        consoleTitle: String,
+        project: Project,
+        contentType: ConsoleViewContentType
+) {
     val runnable = {
         val console = TextConsoleBuilderFactory.getInstance().createBuilder(project).console
         console.print(message, contentType)
@@ -49,7 +64,10 @@ private fun showInConsole(message: String, consoleTitle: String, project: Projec
     ApplicationManager.getApplication().invokeAndWait(runnable, ModalityState.NON_MODAL)
 }
 
-private class MyConsolePanel internal constructor(consoleView: ExecutionConsole, toolbarActions: ActionGroup) : JPanel(BorderLayout()) {
+private class MyConsolePanel internal constructor(
+        consoleView: ExecutionConsole,
+        toolbarActions: ActionGroup
+) : JPanel(BorderLayout()) {
     init {
         val toolbarPanel = JPanel(BorderLayout())
         toolbarPanel.add(ActionManager.getInstance().createActionToolbar(ActionPlaces.UNKNOWN, toolbarActions, false).component)

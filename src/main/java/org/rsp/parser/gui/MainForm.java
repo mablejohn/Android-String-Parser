@@ -1,9 +1,13 @@
 package org.rsp.parser.gui;
 
 import com.google.api.services.sheets.v4.Sheets;
+import com.intellij.openapi.progress.ProgressIndicator;
+import com.intellij.openapi.progress.ProgressManager;
+import com.intellij.openapi.progress.Task;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.util.Consumer;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.rsp.parser.contract.OnActionCompletedListener;
 import org.rsp.parser.gui.adapter.ColumnComboBoxModel;
@@ -15,21 +19,18 @@ import org.rsp.parser.helper.XmlInterpreter;
 import org.rsp.parser.model.*;
 import org.rsp.parser.notification.NotificationBus;
 import org.rsp.parser.sheet.SheetsQuickstart;
-import org.rsp.parser.sheet.manage.SpreadSheetManager;
 import org.rsp.parser.util.FileDescriptor;
 import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
 
 import javax.swing.*;
-import javax.swing.event.ChangeEvent;
-import javax.swing.event.ChangeListener;
 import javax.xml.parsers.ParserConfigurationException;
 import java.awt.*;
 import java.awt.event.ItemEvent;
 import java.io.IOException;
-import java.security.GeneralSecurityException;
 import java.util.List;
 
+import static org.rsp.parser.plugin.ArsParserSettings.PLUGIN_NAME;
 import static org.rsp.parser.util.FileDescriptor.FILE_CHOOSER_DESCRIPTION;
 import static org.rsp.parser.util.FileDescriptor.FILE_CHOOSER_TITLE;
 
@@ -77,10 +78,12 @@ public class MainForm extends JPanel implements Consumer<VirtualFile>,
     private JPanel panelListRoot;
     private JCheckBox selectAllCheckBox;
     private JComboBox<String> comboBoxKey;
+
     private List<ResourceString> listResult;
     private Constant.ActionMode actionMode;
     private OnActionCompletedListener listener;
     private ResTableModel resTableModel;
+    private Sheets sheets;
 
     MainForm(Project project, OnActionCompletedListener listener, Constant.ActionMode actionMode) {
 
@@ -95,17 +98,9 @@ public class MainForm extends JPanel implements Consumer<VirtualFile>,
 
         addTabChangeListener();
         addToGroup();
-        radioWord.addActionListener(e -> {
-            try {
-                Sheets service = SheetsQuickstart.main();
-                SpreadSheetManager sheetManager = new SpreadSheetManager(service);
-                sheetManager.create("String");
-            } catch (IOException | GeneralSecurityException ex) {
-                //showErrorDialog(project, ex.getMessage(), PLUGIN_NAME);
-                NotificationBus.postInfo(project, ex.getMessage());
-            }
-        });
+        sheetCheckListener(project);
     }
+
 
     public static void showWindow(Project project, OnActionCompletedListener listener) {
         JFrame jFrame = new JFrame("");
@@ -127,11 +122,10 @@ public class MainForm extends JPanel implements Consumer<VirtualFile>,
 
     private void selectLandingTab() {
 
-        int index = tabPane.getSelectedIndex();
         tabPane.setSelectedIndex(this.actionMode.getIndex());
         tabPane.setEnabledAt(this.actionMode.getIndex(), true);
 
-        if (index == Constant.ActionMode.IMPORT.getIndex()) {
+        if (tabPane.getSelectedIndex() == Constant.ActionMode.IMPORT.getIndex()) {
             loadExcelSheet();
             loadKeyColumns();
             loadValueColumns();
@@ -142,6 +136,31 @@ public class MainForm extends JPanel implements Consumer<VirtualFile>,
     @Override
     public void consume(VirtualFile virtualFile) {
 
+    }
+
+    @Override
+    public void onColumnDataChanged(boolean checked, int row, int column) {
+        /*if (!checked) {
+            changeSelectAllCheckState(false);
+            return;
+        }
+
+        if (null == listResult)
+            return;
+
+        boolean isSelectAll = true;
+        for (ResourceString resourceString : listResult) {
+
+            if (!resourceString.isSelected()) {
+                isSelectAll = false;
+                changeSelectAllCheckState(false);
+                break;
+            }
+        }
+
+        if (isSelectAll) {
+            changeSelectAllCheckState(true);
+        }*/
     }
 
     private void addExportActionListener() {
@@ -180,15 +199,13 @@ public class MainForm extends JPanel implements Consumer<VirtualFile>,
             }
         });
         buttonExportCancel.addActionListener(e -> listener.onCancelClicked());
-        selectAllCheckBox.addItemListener(e -> {
-            EventQueue.invokeLater(() -> {
-                boolean isSelected = checkSelectAllState(e);
-                for (int i = 0; i < tableResource.getRowCount(); i++) {
-                    tableResource.getModel().setValueAt(isSelected, i, Constant.TABLE_COLUMN_SELECTED);
-                }
-                resTableModel.notify();
-            });
-        });
+        selectAllCheckBox.addItemListener(e -> EventQueue.invokeLater(() -> {
+            boolean isSelected = checkSelectAllState(e);
+            for (int i = 0; i < tableResource.getRowCount(); i++) {
+                tableResource.getModel().setValueAt(isSelected, i, Constant.TABLE_COLUMN_SELECTED);
+            }
+            resTableModel.fireTableDataChanged();
+        }));
     }
 
     private boolean checkSelectAllState(ItemEvent e) {
@@ -249,7 +266,6 @@ public class MainForm extends JPanel implements Consumer<VirtualFile>,
                     NotificationBus.postInfo(project, "Import completed successfully.");
 
                 } catch (IOException | ParserConfigurationException | SAXException ex) {
-                    //showErrorDialog(project, ex.getMessage(), PLUGIN_NAME);
                     NotificationBus.postInfo(project, ex.getMessage());
                 }
             }
@@ -258,25 +274,31 @@ public class MainForm extends JPanel implements Consumer<VirtualFile>,
     }
 
     private void addTabChangeListener() {
-        tabPane.addChangeListener(new ChangeListener() {
-            /**
-             * Invoked when the target of the listener has changed its state.
-             *
-             * @param e a ChangeEvent object
-             */
-            @Override
-            public void stateChanged(ChangeEvent e) {
-                int selectedIndex = tabPane.getSelectedIndex();
-                if (selectedIndex == Constant.ActionMode.EXPORT.getIndex()) {
-                    actionMode = Constant.ActionMode.EXPORT;
-                } else {
-                    actionMode = Constant.ActionMode.IMPORT;
-                    loadExcelSheet();
-                    loadKeyColumns();
-                    loadValueColumns();
-                    loadSuggestionColumns();
-                }
+        tabPane.addChangeListener(e -> {
+            int selectedIndex = tabPane.getSelectedIndex();
+            if (selectedIndex == Constant.ActionMode.EXPORT.getIndex()) {
+                actionMode = Constant.ActionMode.EXPORT;
+            } else {
+                actionMode = Constant.ActionMode.IMPORT;
+                loadExcelSheet();
+                loadKeyColumns();
+                loadValueColumns();
+                loadSuggestionColumns();
             }
+        });
+    }
+
+    private void sheetCheckListener(Project project) {
+        radioWord.addActionListener(e -> {
+            SheetWorker sheetWorker = new SheetWorker();
+            sheetWorker.execute();
+            ProgressManager.getInstance().run(new Task.Backgroundable(project, PLUGIN_NAME) {
+                public void run(@NotNull ProgressIndicator indicator) {
+                    indicator.setText("This is how you update the indicator");
+                    indicator.setIndeterminate(false);
+                    indicator.setFraction(0.5);  // halfway done
+                }
+            });
         });
     }
 
@@ -287,7 +309,6 @@ public class MainForm extends JPanel implements Consumer<VirtualFile>,
             ExcelWriteFile excelData = new ExcelWriteFile(path, listResult);
             writeExcelFile.writeXLSFile(excelData);
         } catch (IOException ex) {
-            //showErrorDialog(project, e.getMessage(), PLUGIN_NAME);
             NotificationBus.postInfo(project, ex.getMessage());
         }
     }
@@ -322,7 +343,6 @@ public class MainForm extends JPanel implements Consumer<VirtualFile>,
         if (null == resTableModel) {
             resTableModel = new ResTableModel(this, resourceStrings, null);
         } else {
-            //resTableModel.removeAll();
             resTableModel.setModel(resourceStrings);
         }
         tableResource.setModel(resTableModel);
@@ -342,7 +362,6 @@ public class MainForm extends JPanel implements Consumer<VirtualFile>,
             XmlInterpreter interpreter = new XmlInterpreter();
             return interpreter.interpret(nodeList);
         } catch (ParserConfigurationException | SAXException | IOException ex) {
-            //showErrorDialog(project, e.getMessage(), PLUGIN_NAME);
             NotificationBus.postInfo(project, ex.getMessage());
         }
         return null;
@@ -350,11 +369,9 @@ public class MainForm extends JPanel implements Consumer<VirtualFile>,
 
     private boolean validateImport() {
         if (textImportSource.getText().isEmpty()) {
-            //showErrorDialog(project, "Source file path required", PLUGIN_NAME);
             NotificationBus.postError(project, "Source file path required");
             return false;
         } else if (textImportDestination.getText().isEmpty()) {
-            //showErrorDialog(project, "Destination file path required", PLUGIN_NAME);
             NotificationBus.postError(project, "Destination path required");
             return false;
         }
@@ -377,39 +394,45 @@ public class MainForm extends JPanel implements Consumer<VirtualFile>,
 
     private boolean validateExport() {
         if (textExportSource.getText().isEmpty()) {
-            //showErrorDialog(project, "Source file path required", PLUGIN_NAME);
             NotificationBus.postError(project, "Source file path required");
             return false;
         } else if (textExportDestination.getText().isEmpty()) {
-            //showErrorDialog(project, "Destination path required", PLUGIN_NAME);
             NotificationBus.postError(project, "Destination path required");
             return false;
         }
         return true;
     }
 
-    @Override
-    public void onColumnDataChanged(boolean checked, int row, int column) {
-        /*if (!checked) {
-            changeSelectAllCheckState(false);
-            return;
+    private class SheetWorker extends SwingWorker<String, Object> {
+
+        private int id;
+        private boolean running;
+        private ResTableModel tableModel;
+
+        public int getId() {
+            return this.id;
         }
 
-        if (null == listResult)
-            return;
-
-        boolean isSelectAll = true;
-        for (ResourceString resourceString : listResult) {
-
-            if (!resourceString.isSelected()) {
-                isSelectAll = false;
-                changeSelectAllCheckState(false);
-                break;
-            }
+        public boolean isRunning() {
+            return this.running;
         }
 
-        if (isSelectAll) {
-            changeSelectAllCheckState(true);
-        }*/
+        /**
+         * Computes a result, or throws an exception if unable to do so.
+         *
+         * <p>
+         * Note that this method is executed only once.
+         *
+         * <p>
+         * Note: this method is executed in a background thread.
+         *
+         * @return the computed result
+         * @throws Exception if unable to compute a result
+         */
+        @Override
+        protected String doInBackground() throws Exception {
+            sheets = SheetsQuickstart.authorizeApiClient();
+            return null;
+        }
     }
 }

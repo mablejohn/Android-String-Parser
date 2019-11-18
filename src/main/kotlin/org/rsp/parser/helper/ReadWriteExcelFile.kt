@@ -6,7 +6,7 @@ import org.apache.poi.hssf.usermodel.HSSFCell
 import org.apache.poi.hssf.usermodel.HSSFRow
 import org.apache.poi.hssf.usermodel.HSSFSheet
 import org.apache.poi.hssf.usermodel.HSSFWorkbook
-import org.apache.poi.ss.usermodel.CellType
+import org.apache.poi.ss.usermodel.Row
 import org.apache.poi.xssf.usermodel.XSSFCell
 import org.apache.poi.xssf.usermodel.XSSFRow
 import org.apache.poi.xssf.usermodel.XSSFSheet
@@ -28,125 +28,133 @@ class ReadWriteExcelFile {
     fun readXLSFile(excelData: ExcelReadFile): List<ResourceString> {
 
         val inputStream: InputStream = FileInputStream(excelData.excelFilePath)
-        val wb = HSSFWorkbook(inputStream)
-        val sheet: HSSFSheet = wb.getSheetAt(excelData.sheetIndex)
-        val rows: Iterator<*> = sheet.rowIterator()
+        inputStream.use { ioStream ->
+            val poiDocument = HSSFWorkbook(inputStream)
+            val sheet: HSSFSheet = poiDocument.getSheetAt(excelData.sheetIndex)
+            val rows: Iterator<*> = sheet.rowIterator()
+            val resultList = arrayListOf<ResourceString>()
+            while (rows.hasNext()) {
+                val row = rows.next() as Row
+                parseCell(row, excelData)
+                        .takeIf { it.name.isNotEmpty() && it.data.isNotEmpty() }
+                        ?.let { resultList.add(it) }
+            }
 
-        val resultList = arrayListOf<ResourceString>()
-        while (rows.hasNext()) {
-            val row = rows.next() as HSSFRow
-            parseCell(row.cellIterator(), excelData)
-                    .takeIf { it.name.isNotEmpty() && it.data.isNotEmpty() }
-                    ?.let {
-                        resultList.add(it)
-                    }
+            ioStream.close()
+            return resultList
         }
-        return resultList
     }
 
     @Throws(IOException::class)
     fun readXLSXFile(excelData: ExcelReadFile): List<ResourceString> {
 
         val inputStream: InputStream = FileInputStream(excelData.excelFilePath)
-        val wb = XSSFWorkbook(inputStream)
-        val sheet: XSSFSheet = wb.getSheetAt(excelData.sheetIndex)
-        val rows: Iterator<*> = sheet.rowIterator()
+        inputStream.use { ioStream ->
+            val wb = XSSFWorkbook(inputStream)
+            val sheet: XSSFSheet = wb.getSheetAt(excelData.sheetIndex)
+            val rows: Iterator<*> = sheet.rowIterator()
+            val resultList = arrayListOf<ResourceString>()
+            while (rows.hasNext()) {
+                val row = rows.next() as Row
+                parseCell(row, excelData)
+                        .takeIf { it.name.isNotEmpty() && it.data.isNotEmpty() }
+                        ?.let { resultList.add(it) }
+            }
 
-        val resultList = arrayListOf<ResourceString>()
-        while (rows.hasNext()) {
-            val row = rows.next() as XSSFRow
-            parseCell(row.cellIterator(), excelData)
-                    .takeIf { it.name.isNotEmpty() && it.data.isNotEmpty() }
-                    ?.let {
-                        resultList.add(it)
-                    }
+            ioStream.close()
+            return resultList
         }
-        return resultList
     }
 
     @Throws(IOException::class)
     fun writeXLSFile(excelData: ExcelWriteFile) {
 
         val wb = HSSFWorkbook()
-        val sheet: HSSFSheet = wb.createSheet(excelData.sheetName)
+        val fileOut = FileOutputStream(excelData.excelFilePath)
 
-        for (row in excelData.data.indices) {
+        try {
+            val sheet: HSSFSheet = wb.createSheet(excelData.sheetName)
+            for (row in excelData.data.indices) {
 
-            val dataRow = excelData.data[row]
-            if (!dataRow.isSelected)
-                continue
+                val dataRow = excelData.data[row]
+                if (!dataRow.isSelected)
+                    continue
 
-            val hssfRow: HSSFRow = sheet.createRow(row)
-            for (column in 0 until COLUMN_SUGGESTION_INDEX) {
-                val cell: HSSFCell = hssfRow.createCell(column)
-                if (column == COLUMN_KEY_INDEX) {
-                    cell.setCellValue(dataRow.name)
-                } else if (column == COLUMN_VALUE_INDEX) {
-                    cell.setCellValue(dataRow.data)
+                val hssfRow: HSSFRow = sheet.createRow(row)
+                for (column in 0 until COLUMN_SUGGESTION_INDEX) {
+                    val cell: HSSFCell = hssfRow.createCell(column)
+                    if (column == COLUMN_KEY_INDEX) {
+                        cell.setCellValue(dataRow.name)
+                    } else if (column == COLUMN_VALUE_INDEX) {
+                        cell.setCellValue(dataRow.data)
+                    }
                 }
             }
+        } finally {
+            wb.write(fileOut)
+            fileOut.flush()
+            fileOut.close()
         }
-        val fileOut = FileOutputStream(excelData.excelFilePath)
-        //write this workbook to an Output stream.
-        wb.write(fileOut)
-        fileOut.flush()
-        fileOut.close()
     }
 
     @Throws(IOException::class)
     fun writeXLSXFile(excelData: ExcelWriteFile) {
 
         val wb = XSSFWorkbook()
-        val sheet: XSSFSheet = wb.createSheet(excelData.sheetName)
+        val fileOut = FileOutputStream(excelData.excelFilePath)
 
-        for (row in 0..4) {
-            val xssfRow: XSSFRow = sheet.createRow(row)
-            for (column in 0..4) {
-                val cell: XSSFCell = xssfRow.createCell(column)
+        try {
+            val sheet: XSSFSheet = wb.createSheet(excelData.sheetName)
+            for (row in excelData.data.indices) {
+
                 val dataRow = excelData.data[row]
+                if (!dataRow.isSelected)
+                    continue
 
-                if (column == COLUMN_KEY_INDEX) {
-                    cell.setCellValue(dataRow.name)
-                } else if (column == COLUMN_VALUE_INDEX) {
-                    cell.setCellValue(dataRow.data)
+                val xssfRow: XSSFRow = sheet.createRow(row)
+                for (column in 0 until COLUMN_SUGGESTION_INDEX) {
+
+                    val cell: XSSFCell = xssfRow.createCell(column)
+                    if (column == COLUMN_KEY_INDEX) {
+                        cell.setCellValue(dataRow.name)
+                    } else if (column == COLUMN_VALUE_INDEX) {
+                        cell.setCellValue(dataRow.data)
+                    }
                 }
             }
+        } finally {
+            wb.write(fileOut)
+            fileOut.flush()
+            fileOut.close()
         }
-
-        val fileOut = FileOutputStream(excelData.excelFilePath)
-        //write this workbook to an output stream.
-        wb.write(fileOut)
-        fileOut.flush()
-        fileOut.close()
     }
 
-    private fun parseCell(cells: Iterator<*>, excelData: ExcelReadFile): ResourceString {
+    private fun parseCell(row: Row, excelData: ExcelReadFile): ResourceString {
 
-        val rs = ResourceString()
+        val cellKey = row.getCell(
+                excelData.columnKeyIndex,
+                Row.MissingCellPolicy.RETURN_NULL_AND_BLANK
+        )
+        val cellValue = row.getCell(
+                excelData.columnValueIndex,
+                Row.MissingCellPolicy.RETURN_NULL_AND_BLANK
+        )
+        val cellSuggestion = row.getCell(
+                excelData.columnSuggestionIndex,
+                Row.MissingCellPolicy.RETURN_NULL_AND_BLANK
+        )
 
-        while (cells.hasNext()) {
-            val cell = when (val rawCell = cells.next()) {
-                is XSSFCell -> rawCell
-                is HSSFCell -> rawCell
-                else -> throw  UnsupportedClassVersionError("Invalid type detected..!")
-            }
-            when {
-                (cell.cellType == CellType.STRING || cell.cellType == CellType.NUMERIC)
-                        && cell.columnIndex == excelData.columnKeyIndex ->
-                    rs.name = cell.stringCellValue
-
-                (cell.cellType == CellType.STRING || cell.cellType == CellType.NUMERIC)
-                        && (cell.columnIndex == excelData.columnValueIndex) ->
-                    rs.data = cell.stringCellValue
-
-                (cell.cellType == CellType.STRING || cell.cellType == CellType.NUMERIC)
-                        && (cell.columnIndex == excelData.columnSuggestionIndex) -> {
-                    rs.suggestion = cell.stringCellValue
-                }
-                else -> {
-                }
-            }
+        with(ResourceString()) {
+            this.suggestion = ""
+            cellKey?.let { name = it.stringCellValue }
+            cellValue?.let { data = it.stringCellValue }
+            cellSuggestion?.let { suggestion = it.stringCellValue }
+            return this
         }
-        return rs
+    }
+
+    enum class ExcelType(val type: Int) {
+        XLS(0),
+        XLSX(1)
     }
 }

@@ -19,11 +19,10 @@ class ArsParserSettings : PersistentStateComponent<ArsParserPluginState> {
     }
 
     companion object {
+        const val PLUGIN_NAME = "String-Parser"
         @JvmStatic
         fun getInstance(): PersistentStateComponent<ArsParserPluginState> {
             return ServiceManager.getService(ArsParserSettings::class.java)
         }
-
-        const val PLUGIN_NAME = "ARS-Parser"
     }
 }

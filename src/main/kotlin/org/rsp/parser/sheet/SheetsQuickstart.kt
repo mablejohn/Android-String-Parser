@@ -41,15 +41,18 @@ object SheetsQuickstart {
      */
     @Throws(IOException::class, GeneralSecurityException::class)
     @JvmStatic
-    fun main(vararg args: String?): Sheets {
-        // Build a new authorized API client service.
+    fun authorizeApiClient(): Sheets {
 
         val httpTransport: NetHttpTransport = GoogleNetHttpTransport.newTrustedTransport()
+        val service: Sheets = Sheets.Builder(
+                httpTransport,
+                JSON_FACTORY,
+                getCredentials(httpTransport)
+        ).setApplicationName(APPLICATION_NAME)
+                .build()
+
         val spreadsheetId = "1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms"
         val range = "Class Data!A2:E"
-        val service: Sheets = Sheets.Builder(httpTransport, JSON_FACTORY, getCredentials(httpTransport))
-                .setApplicationName(APPLICATION_NAME)
-                .build()
         val response: ValueRange = service.spreadsheets().values()
                 .get(spreadsheetId, range)
                 .execute()
