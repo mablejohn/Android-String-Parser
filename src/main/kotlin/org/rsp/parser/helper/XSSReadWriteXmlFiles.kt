@@ -85,5 +85,7 @@ class XSSReadWriteXmlFiles {
          *  The XPath expression.
          */
         const val xPathRoot = "resources/string"
+
+        const val xPathName = "name"
     }
 }
