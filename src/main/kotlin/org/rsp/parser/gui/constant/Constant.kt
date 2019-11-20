@@ -3,7 +3,7 @@ package org.rsp.parser.gui.constant
 
 class Constant {
     companion object {
-        const val EXCEL_OUT_PATH = "String.xls"
+        const val EXCEL_OUT_PATH = "String-Resource.xls"
         const val TABLE_COLUMN_KEY = 1
         const val TABLE_COLUMN_KEY_WIDTH = 300
         const val TABLE_COLUMN_SELECTED = 0
@@ -23,5 +23,13 @@ class Constant {
     enum class ActionMode(val index: Int) {
         EXPORT(0),
         IMPORT(1)
+    }
+
+    enum class SupportedFileTypes(val extension: String) {
+        XML("xml"),
+        XLS("xls"),
+        XLSX("xlsx"),
+        CSV("csv")
+
     }
 }

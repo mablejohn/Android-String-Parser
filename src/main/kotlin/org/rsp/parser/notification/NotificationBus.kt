@@ -26,20 +26,45 @@ object NotificationBus {
         sendNotification(project, message, NotificationType.INFORMATION, verbose)
     }
 
+    @JvmStatic
+    fun postInfo(
+            project: Project,
+            title: String,
+            subtitle: String,
+            content: String
+    ) {
+        sendNotification(project, title, subtitle, content)
+    }
+
     private fun escapeString(string: String): String {
         return string.replace("\n".toRegex(), "\n<br />")
     }
 
     private fun sendNotification(
             project: Project,
-            message: String,
-            notificationType: NotificationType?,
+            content: String,
+            notificationType: NotificationType,
             notificationGroup: NotificationGroup
     ) {
         notificationGroup.createNotification(
                 PLUGIN_NAME,
-                escapeString(message),
-                notificationType!!,
+                escapeString(content),
+                notificationType,
+                notificationListener
+        ).notify(project)
+    }
+
+    private fun sendNotification(
+            project: Project,
+            title: String,
+            subtitle: String,
+            content: String
+    ) {
+        verbose.createNotification(
+                title,
+                subtitle,
+                escapeString(content),
+                NotificationType.INFORMATION,
                 notificationListener
         ).notify(project)
     }

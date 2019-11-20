@@ -11,10 +11,12 @@ import com.intellij.util.Consumer
 
 class FileDescriptor {
 
-    fun browseSingleFile(project: Project,
-                         callback: Consumer<VirtualFile>,
-                         title: String = FILE_CHOOSER_TITLE,
-                         description: String = FILE_CHOOSER_DESCRIPTION) {
+    fun browseSingleFile(
+            project: Project,
+            callback: Consumer<VirtualFile>,
+            title: String = FILE_CHOOSER_TITLE,
+            description: String = FILE_CHOOSER_DESCRIPTION
+    ) {
         FileChooser.chooseFile(FileChooserDescriptorFactory
                 .createSingleFileDescriptor()
                 .withTitle(title)
@@ -25,13 +27,16 @@ class FileDescriptor {
         )
     }
 
-    fun browseSingleFile(project: Project,
-                         callback: Consumer<VirtualFile>,
-                         fileFilter: Condition<VirtualFile>? = null,
-                         title: String = FILE_CHOOSER_TITLE,
-                         description: String = FILE_CHOOSER_DESCRIPTION) {
+    fun browseSingleFile(
+            project: Project,
+            callback: Consumer<VirtualFile>,
+            fileFilter: Condition<VirtualFile>? = null,
+            title: String = FILE_CHOOSER_TITLE,
+            description: String = FILE_CHOOSER_DESCRIPTION
+    ) {
         FileChooser.chooseFile(FileChooserDescriptorFactory
                 .createSingleFileDescriptor()
+                .withFileFilter(fileFilter)
                 .withTitle(title)
                 .withDescription(description),
                 project,
@@ -40,9 +45,11 @@ class FileDescriptor {
         )
     }
 
-    fun browseSingleFolder(project: Project,
-                           title: String =
-                                   FOLDER_CHOOSER_TITLE, description: String = FILE_CHOOSER_DESCRIPTION): VirtualFile? {
+    fun browseSingleFolder(
+            project: Project,
+            title: String = FOLDER_CHOOSER_TITLE,
+            description: String = FILE_CHOOSER_DESCRIPTION
+    ): VirtualFile? {
         return FileChooser.chooseFile(FileChooserDescriptorFactory.createSingleFolderDescriptor(),
                 project, null)
     }

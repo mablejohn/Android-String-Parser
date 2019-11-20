@@ -18,21 +18,20 @@ import org.rsp.parser.helper.XSSReadWriteXmlFiles;
 import org.rsp.parser.helper.XmlInterpreter;
 import org.rsp.parser.model.*;
 import org.rsp.parser.notification.NotificationBus;
+import org.rsp.parser.plugin.ArsParserSettings;
 import org.rsp.parser.sheet.SheetsQuickstart;
 import org.rsp.parser.util.FileDescriptor;
 import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
 
 import javax.swing.*;
+import javax.swing.table.TableCellRenderer;
+import javax.swing.table.TableColumnModel;
 import javax.xml.parsers.ParserConfigurationException;
 import java.awt.*;
 import java.awt.event.ItemEvent;
 import java.io.IOException;
 import java.util.List;
-
-import static org.rsp.parser.plugin.ArsParserSettings.PLUGIN_NAME;
-import static org.rsp.parser.util.FileDescriptor.FILE_CHOOSER_DESCRIPTION;
-import static org.rsp.parser.util.FileDescriptor.FILE_CHOOSER_TITLE;
 
 @SuppressWarnings("unused")
 public class MainForm extends JPanel implements Consumer<VirtualFile>,
@@ -140,48 +139,30 @@ public class MainForm extends JPanel implements Consumer<VirtualFile>,
 
     @Override
     public void onColumnDataChanged(boolean checked, int row, int column) {
-        /*if (!checked) {
-            changeSelectAllCheckState(false);
-            return;
-        }
 
-        if (null == listResult)
-            return;
-
-        boolean isSelectAll = true;
-        for (ResourceString resourceString : listResult) {
-
-            if (!resourceString.isSelected()) {
-                isSelectAll = false;
-                changeSelectAllCheckState(false);
-                break;
-            }
-        }
-
-        if (isSelectAll) {
-            changeSelectAllCheckState(true);
-        }*/
     }
 
     private void addExportActionListener() {
         buttonExportBrowse.addActionListener(e -> {
             if (null != project) {
-                new FileDescriptor().browseSingleFile(
-                        project,
+                new FileDescriptor().browseSingleFile(project,
                         virtualFile -> {
                             textExportSource.setText(virtualFile.getPath());
                             listResult = readResourceFile(virtualFile.getPath());
                             changeSelectAllCheckState();
                             populateStringList(listResult);
                         },
-                        FILE_CHOOSER_TITLE,
-                        FILE_CHOOSER_DESCRIPTION);
+                        this::checkStringResourceFilter,
+                        FileDescriptor.FILE_CHOOSER_TITLE,
+                        FileDescriptor.FILE_CHOOSER_DESCRIPTION);
             }
         });
         buttonBrowseDestination.addActionListener(e -> {
             if (null != project) {
                 VirtualFile virtualFile = new FileDescriptor()
-                        .browseSingleFolder(project, FILE_CHOOSER_TITLE, FILE_CHOOSER_DESCRIPTION);
+                        .browseSingleFolder(project,
+                                FileDescriptor.FILE_CHOOSER_TITLE,
+                                FileDescriptor.FILE_CHOOSER_DESCRIPTION);
                 if (virtualFile != null && virtualFile.isDirectory()) {
                     textExportDestination.setText(virtualFile.getCanonicalPath());
                 }
@@ -189,22 +170,23 @@ public class MainForm extends JPanel implements Consumer<VirtualFile>,
         });
         buttonExportOK.addActionListener(e -> {
 
+            listener.onExPortClicked();
             if (validateExport()) {
-
                 exportResourceString();
-                listener.onExPortClicked();
 
-                NotificationBus.postInfo(project, "Export completed successfully.");
-                clearExportTab();
+                NotificationBus.postInfo(project,
+                        "Export",
+                        "Export completed successfully.",
+                        "<u>Export completed successfully.</u>");
+                onCancel();
             }
         });
-        buttonExportCancel.addActionListener(e -> listener.onCancelClicked());
+        buttonExportCancel.addActionListener(e -> onCancel());
         selectAllCheckBox.addItemListener(e -> EventQueue.invokeLater(() -> {
             boolean isSelected = checkSelectAllState(e);
             for (int i = 0; i < tableResource.getRowCount(); i++) {
                 tableResource.getModel().setValueAt(isSelected, i, Constant.TABLE_COLUMN_SELECTED);
             }
-            resTableModel.fireTableDataChanged();
         }));
     }
 
@@ -234,7 +216,9 @@ public class MainForm extends JPanel implements Consumer<VirtualFile>,
                 new FileDescriptor().browseSingleFile(
                         project,
                         virtualFile -> textImportSource.setText(virtualFile.getPath()),
-                        FILE_CHOOSER_TITLE, FILE_CHOOSER_DESCRIPTION);
+                        this::checkExcelFilter,
+                        FileDescriptor.FILE_CHOOSER_TITLE,
+                        FileDescriptor.FILE_CHOOSER_DESCRIPTION);
             }
         });
         buttonImportDestinationBrowse.addActionListener(e -> {
@@ -242,35 +226,57 @@ public class MainForm extends JPanel implements Consumer<VirtualFile>,
                 new FileDescriptor().browseSingleFile(
                         project,
                         virtualFile -> textImportDestination.setText(virtualFile.getPath()),
-                        FILE_CHOOSER_TITLE, FILE_CHOOSER_DESCRIPTION);
+                        this::checkStringResourceFilter,
+                        FileDescriptor.FILE_CHOOSER_TITLE,
+                        FileDescriptor.FILE_CHOOSER_DESCRIPTION);
             }
         });
         buttonImport.addActionListener(e -> {
+            listener.onImportClicked();
             if (validateImport()) {
-
-                ExcelReadFile readData = new ExcelReadFile(textImportSource.getText());
-                readData.setSheetIndex(comboBoxSheet.getSelectedIndex());
-                readData.setColumnKeyIndex(comboBoxKey.getSelectedIndex());
-                readData.setColumnValueIndex(comboBoxValue.getSelectedIndex());
-                readData.setColumnSuggestionIndex(comboBoxSuggestion.getSelectedIndex());
-
-                try {
-                    ReadWriteExcelFile rw = new ReadWriteExcelFile();
-                    List<ResourceString> strings = rw.readXLSFile(readData);
-
-                    XSSReadWriteXmlFiles xmlReadWrite = new XSSReadWriteXmlFiles();
-                    xmlReadWrite.writeToFile(new ResourceFile(textImportDestination.getText(), strings));
-                    listener.onImportClicked();
-
-                    clearImportTab();
-                    NotificationBus.postInfo(project, "Import completed successfully.");
-
-                } catch (IOException | ParserConfigurationException | SAXException ex) {
-                    NotificationBus.postInfo(project, ex.getMessage());
-                }
+                importFromFile();
             }
         });
-        buttonImportCancel.addActionListener(e -> listener.onCancelClicked());
+        buttonImportCancel.addActionListener(e -> onCancel());
+    }
+
+    private boolean checkStringResourceFilter(VirtualFile virtualFile) {
+
+        String extension = virtualFile.getExtension();
+        if (null == extension) return false;
+
+        return extension.equalsIgnoreCase(Constant.SupportedFileTypes.XML.getExtension());
+    }
+
+    private boolean checkExcelFilter(VirtualFile virtualFile) {
+
+        String extension = virtualFile.getExtension();
+        if (null == extension) return false;
+
+        return extension.equalsIgnoreCase(Constant.SupportedFileTypes.XLS.getExtension())
+                || extension.equalsIgnoreCase(Constant.SupportedFileTypes.XLSX.getExtension());
+    }
+
+    private void importFromFile() {
+
+        ExcelReadFile readData = new ExcelReadFile(textImportSource.getText());
+        readData.setSheetIndex(comboBoxSheet.getSelectedIndex());
+        readData.setColumnKeyIndex(comboBoxKey.getSelectedIndex());
+        readData.setColumnValueIndex(comboBoxValue.getSelectedIndex());
+        readData.setColumnSuggestionIndex(comboBoxSuggestion.getSelectedIndex());
+
+        try {
+            ReadWriteExcelFile rw = new ReadWriteExcelFile();
+            List<ResourceString> strings = rw.readXLSFile(readData);
+
+            XSSReadWriteXmlFiles xmlReadWrite = new XSSReadWriteXmlFiles();
+            xmlReadWrite.writeToFile(new ResourceFile(textImportDestination.getText(), strings));
+
+            NotificationBus.postInfo(project, "Import completed successfully.");
+            onCancel();
+        } catch (IOException | ParserConfigurationException | SAXException ex) {
+            NotificationBus.postError(project, ex.getMessage());
+        }
     }
 
     private void addTabChangeListener() {
@@ -292,7 +298,7 @@ public class MainForm extends JPanel implements Consumer<VirtualFile>,
         radioWord.addActionListener(e -> {
             SheetWorker sheetWorker = new SheetWorker();
             sheetWorker.execute();
-            ProgressManager.getInstance().run(new Task.Backgroundable(project, PLUGIN_NAME) {
+            ProgressManager.getInstance().run(new Task.Backgroundable(project, ArsParserSettings.PLUGIN_NAME) {
                 public void run(@NotNull ProgressIndicator indicator) {
                     indicator.setText("This is how you update the indicator");
                     indicator.setIndeterminate(false);
@@ -309,7 +315,7 @@ public class MainForm extends JPanel implements Consumer<VirtualFile>,
             ExcelWriteFile excelData = new ExcelWriteFile(path, listResult);
             writeExcelFile.writeXLSFile(excelData);
         } catch (IOException ex) {
-            NotificationBus.postInfo(project, ex.getMessage());
+            NotificationBus.postError(project, ex.getMessage());
         }
     }
 
@@ -338,6 +344,10 @@ public class MainForm extends JPanel implements Consumer<VirtualFile>,
         comboBoxSuggestion.setSelectedIndex(IExcelFile.COLUMN_SUGGESTION_INDEX);
     }
 
+    private void onCancel() {
+        listener.onCancelClicked();
+    }
+
     private void populateStringList(List<ResourceString> resourceStrings) {
 
         if (null == resTableModel) {
@@ -346,23 +356,39 @@ public class MainForm extends JPanel implements Consumer<VirtualFile>,
             resTableModel.setModel(resourceStrings);
         }
         tableResource.setModel(resTableModel);
-        tableResource.setAutoResizeMode(JTable.AUTO_RESIZE_LAST_COLUMN);
-        tableResource.getColumnModel().getColumn(Constant.TABLE_COLUMN_SELECTED).setMaxWidth(Constant.TABLE_COLUMN_SELECTED_WIDTH);
+        resizeColumnWidth(tableResource);
+        /*tableResource.setAutoResizeMode(JTable.AUTO_RESIZE_LAST_COLUMN);
+        tableResource.getColumnModel().getColumn(Constant.TABLE_COLUMN_SELECTED).setWidth(Constant.TABLE_COLUMN_SELECTED_WIDTH);
         tableResource.getColumnModel().getColumn(Constant.TABLE_COLUMN_KEY).setMinWidth(Constant.TABLE_COLUMN_KEY_WIDTH);
         tableResource.getColumnModel().getColumn(Constant.TABLE_COLUMN_VALUE).setMinWidth(Constant.TABLE_COLUMN_VALUE_WIDTH);
-        tableResource.setPreferredScrollableViewportSize(tableResource.getPreferredSize());
+        tableResource.setPreferredScrollableViewportSize(tableResource.getPreferredSize());*/
+    }
+
+    private void resizeColumnWidth(JTable table) {
+        final TableColumnModel columnModel = table.getColumnModel();
+        for (int column = 0; column < table.getColumnCount(); column++) {
+            int width = 15; // Min width
+            for (int row = 0; row < table.getRowCount(); row++) {
+                TableCellRenderer renderer = table.getCellRenderer(row, column);
+                Component comp = table.prepareRenderer(renderer, row, column);
+                width = Math.max(comp.getPreferredSize().width + 1, width);
+            }
+            if (width > 300) {
+                width = 300;
+            }
+            columnModel.getColumn(column).setPreferredWidth(width);
+        }
     }
 
     @Nullable
     private List<ResourceString> readResourceFile(String path) {
-
         XSSReadWriteXmlFiles xmlReader = new XSSReadWriteXmlFiles();
         try {
             NodeList nodeList = xmlReader.readFile(path, XSSReadWriteXmlFiles.xPathRoot);
             XmlInterpreter interpreter = new XmlInterpreter();
             return interpreter.interpret(nodeList);
         } catch (ParserConfigurationException | SAXException | IOException ex) {
-            NotificationBus.postInfo(project, ex.getMessage());
+            NotificationBus.postError(project, ex.getMessage());
         }
         return null;
     }
