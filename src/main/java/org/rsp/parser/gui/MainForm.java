@@ -1,10 +1,16 @@
 package org.rsp.parser.gui;
 
 import com.google.api.services.sheets.v4.Sheets;
+import com.intellij.notification.NotificationListener;
+import com.intellij.openapi.fileEditor.FileEditorManager;
+import com.intellij.openapi.fileEditor.FileEditorProvider;
+import com.intellij.openapi.fileEditor.OpenFileDescriptor;
+import com.intellij.openapi.fileEditor.ex.FileEditorProviderManager;
 import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.progress.ProgressManager;
 import com.intellij.openapi.progress.Task;
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.vfs.LocalFileSystem;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.util.Consumer;
 import org.jetbrains.annotations.NotNull;
@@ -32,6 +38,8 @@ import java.awt.*;
 import java.awt.event.ItemEvent;
 import java.io.IOException;
 import java.util.List;
+
+import static org.rsp.parser.plugin.ArsParserSettings.PLUGIN_NAME;
 
 @SuppressWarnings("unused")
 public class MainForm extends JPanel implements Consumer<VirtualFile>,
@@ -82,7 +90,6 @@ public class MainForm extends JPanel implements Consumer<VirtualFile>,
     private Constant.ActionMode actionMode;
     private OnActionCompletedListener listener;
     private ResTableModel resTableModel;
-    private Sheets sheets;
 
     MainForm(Project project, OnActionCompletedListener listener, Constant.ActionMode actionMode) {
 
@@ -91,7 +98,6 @@ public class MainForm extends JPanel implements Consumer<VirtualFile>,
         this.listener = listener;
 
         selectLandingTab();
-
         addExportActionListener();
         addImportActionListener();
 
@@ -120,7 +126,6 @@ public class MainForm extends JPanel implements Consumer<VirtualFile>,
     }
 
     private void selectLandingTab() {
-
         tabPane.setSelectedIndex(this.actionMode.getIndex());
         tabPane.setEnabledAt(this.actionMode.getIndex(), true);
 
@@ -145,42 +150,29 @@ public class MainForm extends JPanel implements Consumer<VirtualFile>,
     private void addExportActionListener() {
         buttonExportBrowse.addActionListener(e -> {
             if (null != project) {
-                new FileDescriptor().browseSingleFile(project,
-                        virtualFile -> {
-                            textExportSource.setText(virtualFile.getPath());
-                            listResult = readResourceFile(virtualFile.getPath());
-                            changeSelectAllCheckState();
-                            populateStringList(listResult);
-                        },
-                        this::checkStringResourceFilter,
-                        FileDescriptor.FILE_CHOOSER_TITLE,
-                        FileDescriptor.FILE_CHOOSER_DESCRIPTION);
+                browseExportSource();
             }
         });
         buttonBrowseDestination.addActionListener(e -> {
             if (null != project) {
-                VirtualFile virtualFile = new FileDescriptor()
-                        .browseSingleFolder(project,
-                                FileDescriptor.FILE_CHOOSER_TITLE,
-                                FileDescriptor.FILE_CHOOSER_DESCRIPTION);
-                if (virtualFile != null && virtualFile.isDirectory()) {
-                    textExportDestination.setText(virtualFile.getCanonicalPath());
-                }
+                browseExportDestination();
             }
         });
+
         buttonExportOK.addActionListener(e -> {
 
             listener.onExPortClicked();
             if (validateExport()) {
-                exportResourceString();
 
-                NotificationBus.postInfo(project,
-                        "Export",
+                exportResourceString();
+                NotificationBus.postInfo(project, PLUGIN_NAME,
                         "Export completed successfully.",
-                        "<u>Export completed successfully.</u>");
+                        "<html>Android-resource.xls <a href=" + textExportDestination.getText() + ">locate</a> the file.</html>",
+                        new NotificationListener.UrlOpeningListener(true));
                 onCancel();
             }
         });
+
         buttonExportCancel.addActionListener(e -> onCancel());
         selectAllCheckBox.addItemListener(e -> EventQueue.invokeLater(() -> {
             boolean isSelected = checkSelectAllState(e);
@@ -188,6 +180,29 @@ public class MainForm extends JPanel implements Consumer<VirtualFile>,
                 tableResource.getModel().setValueAt(isSelected, i, Constant.TABLE_COLUMN_SELECTED);
             }
         }));
+    }
+
+    private void browseExportDestination() {
+        VirtualFile virtualFile = new FileDescriptor()
+                .browseSingleFolder(project,
+                        FileDescriptor.FILE_CHOOSER_TITLE,
+                        FileDescriptor.FILE_CHOOSER_DESCRIPTION);
+        if (virtualFile != null && virtualFile.isDirectory()) {
+            textExportDestination.setText(virtualFile.getCanonicalPath());
+        }
+    }
+
+    private void browseExportSource() {
+        new FileDescriptor().browseSingleFile(project,
+                virtualFile -> {
+                    textExportSource.setText(virtualFile.getPath());
+                    listResult = readResourceFile(virtualFile.getPath());
+                    changeSelectAllCheckState();
+                    populateStringList(listResult);
+                },
+                this::checkStringResourceFilter,
+                FileDescriptor.FILE_CHOOSER_TITLE,
+                FileDescriptor.FILE_CHOOSER_DESCRIPTION);
     }
 
     private boolean checkSelectAllState(ItemEvent e) {
@@ -213,31 +228,61 @@ public class MainForm extends JPanel implements Consumer<VirtualFile>,
     private void addImportActionListener() {
         buttonSourceImportBrowse.addActionListener(e -> {
             if (null != project) {
-                new FileDescriptor().browseSingleFile(
-                        project,
-                        virtualFile -> textImportSource.setText(virtualFile.getPath()),
-                        this::checkExcelFilter,
-                        FileDescriptor.FILE_CHOOSER_TITLE,
-                        FileDescriptor.FILE_CHOOSER_DESCRIPTION);
+                browseImportSource();
             }
         });
         buttonImportDestinationBrowse.addActionListener(e -> {
             if (null != project) {
-                new FileDescriptor().browseSingleFile(
-                        project,
-                        virtualFile -> textImportDestination.setText(virtualFile.getPath()),
-                        this::checkStringResourceFilter,
-                        FileDescriptor.FILE_CHOOSER_TITLE,
-                        FileDescriptor.FILE_CHOOSER_DESCRIPTION);
+                browseImportDestination();
             }
         });
         buttonImport.addActionListener(e -> {
             listener.onImportClicked();
             if (validateImport()) {
-                importFromFile();
+                boolean isSuccess = importFromFile();
+                if (isSuccess) {
+                    NotificationBus.postInfo(project, PLUGIN_NAME,
+                            "Import completed successfully.",
+                            "<html>string.xml <a href=" + textExportDestination.getText() + ">open</a> the file.</html>",
+                            (notification, event) -> {
+                                openFileInEditor();
+                            });
+                    onCancel();
+                }
             }
         });
         buttonImportCancel.addActionListener(e -> onCancel());
+    }
+
+    private void browseImportDestination() {
+        new FileDescriptor().browseSingleFile(
+                project,
+                virtualFile -> textImportDestination.setText(virtualFile.getPath()),
+                this::checkStringResourceFilter,
+                FileDescriptor.FILE_CHOOSER_TITLE,
+                FileDescriptor.FILE_CHOOSER_DESCRIPTION);
+    }
+
+    private void browseImportSource() {
+        new FileDescriptor().browseSingleFile(
+                project,
+                virtualFile -> textImportSource.setText(virtualFile.getPath()),
+                this::checkExcelFilter,
+                FileDescriptor.FILE_CHOOSER_TITLE,
+                FileDescriptor.FILE_CHOOSER_DESCRIPTION);
+    }
+
+    private void openFileInEditor() {
+
+        VirtualFile file = LocalFileSystem.getInstance().refreshAndFindFileByPath(textImportDestination.getText());
+        if (file != null && file.isValid()) {
+            FileEditorProvider[] providers = FileEditorProviderManager.getInstance()
+                    .getProviders(project, file);
+            if (providers.length != 0) {
+                OpenFileDescriptor descriptor = new OpenFileDescriptor(project, file);
+                FileEditorManager.getInstance(project).openTextEditor(descriptor, false);
+            }
+        }
     }
 
     private boolean checkStringResourceFilter(VirtualFile virtualFile) {
@@ -257,7 +302,7 @@ public class MainForm extends JPanel implements Consumer<VirtualFile>,
                 || extension.equalsIgnoreCase(Constant.SupportedFileTypes.XLSX.getExtension());
     }
 
-    private void importFromFile() {
+    private boolean importFromFile() {
 
         ExcelReadFile readData = new ExcelReadFile(textImportSource.getText());
         readData.setSheetIndex(comboBoxSheet.getSelectedIndex());
@@ -271,11 +316,10 @@ public class MainForm extends JPanel implements Consumer<VirtualFile>,
 
             XSSReadWriteXmlFiles xmlReadWrite = new XSSReadWriteXmlFiles();
             xmlReadWrite.writeToFile(new ResourceFile(textImportDestination.getText(), strings));
-
-            NotificationBus.postInfo(project, "Import completed successfully.");
-            onCancel();
+            return true;
         } catch (IOException | ParserConfigurationException | SAXException ex) {
             NotificationBus.postError(project, ex.getMessage());
+            return false;
         }
     }
 
@@ -302,7 +346,7 @@ public class MainForm extends JPanel implements Consumer<VirtualFile>,
                 public void run(@NotNull ProgressIndicator indicator) {
                     indicator.setText("This is how you update the indicator");
                     indicator.setIndeterminate(false);
-                    indicator.setFraction(0.5);  // halfway done
+                    indicator.setFraction(0.5);
                 }
             });
         });
@@ -351,7 +395,7 @@ public class MainForm extends JPanel implements Consumer<VirtualFile>,
     private void populateStringList(List<ResourceString> resourceStrings) {
 
         if (null == resTableModel) {
-            resTableModel = new ResTableModel(this, resourceStrings, null);
+            resTableModel = new ResTableModel(resourceStrings, null);
         } else {
             resTableModel.setModel(resourceStrings);
         }
@@ -429,7 +473,7 @@ public class MainForm extends JPanel implements Consumer<VirtualFile>,
         return true;
     }
 
-    private class SheetWorker extends SwingWorker<String, Object> {
+    private static class SheetWorker extends SwingWorker<String, Object> {
 
         private int id;
         private boolean running;
@@ -457,7 +501,7 @@ public class MainForm extends JPanel implements Consumer<VirtualFile>,
          */
         @Override
         protected String doInBackground() throws Exception {
-            sheets = SheetsQuickstart.authorizeApiClient();
+            Sheets sheets = SheetsQuickstart.authorizeApiClient();
             return null;
         }
     }

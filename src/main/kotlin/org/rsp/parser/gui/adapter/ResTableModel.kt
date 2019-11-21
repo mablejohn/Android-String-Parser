@@ -7,7 +7,6 @@ import javax.swing.table.AbstractTableModel
 
 
 class ResTableModel(
-        private val listener: ColumnDataChanged,
         private var resourceList: List<ResourceString>,
         private var columnNames: List<String>? = null
 ) : AbstractTableModel() {

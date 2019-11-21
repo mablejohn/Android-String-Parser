@@ -54,6 +54,7 @@
                       <margin top="10" left="2" bottom="2" right="2"/>
                       <selected value="false"/>
                       <text value="Google Sheet"/>
+                      <visible value="false"/>
                     </properties>
                   </component>
                 </children>
@@ -116,7 +117,7 @@
                           <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
                         </constraints>
                         <properties>
-                          <text value="OK"/>
+                          <text value="Export"/>
                         </properties>
                       </component>
                       <component id="51c60" class="javax.swing.JButton" binding="buttonExportCancel">
@@ -351,8 +352,8 @@
                       <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
                     </constraints>
                     <properties>
-                      <label value="Import"/>
-                      <text value="Import"/>
+                      <label value="Update"/>
+                      <text value="Update"/>
                     </properties>
                   </component>
                 </children>
