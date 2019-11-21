@@ -439,10 +439,10 @@ public class MainForm extends JPanel implements Consumer<VirtualFile>,
 
     private boolean validateImport() {
         if (textImportSource.getText().isEmpty()) {
-            NotificationBus.postError(project, "Source file path required");
+            NotificationBus.postError(project, "Source file path required.");
             return false;
         } else if (textImportDestination.getText().isEmpty()) {
-            NotificationBus.postError(project, "Destination path required");
+            NotificationBus.postError(project, "String resource file required.");
             return false;
         }
         return true;
@@ -464,10 +464,10 @@ public class MainForm extends JPanel implements Consumer<VirtualFile>,
 
     private boolean validateExport() {
         if (textExportSource.getText().isEmpty()) {
-            NotificationBus.postError(project, "Source file path required");
+            NotificationBus.postError(project, "String resource file required.");
             return false;
         } else if (textExportDestination.getText().isEmpty()) {
-            NotificationBus.postError(project, "Destination path required");
+            NotificationBus.postError(project, "Export location required.");
             return false;
         }
         return true;

@@ -1,35 +1,34 @@
 <idea-plugin url="https://www.jetbrains.com/idea">
-
     <id>org.vjapps.rsp.parser</id>
     <name>Android String Parser</name>
-
-    <version>1.0.1</version>
+    <version>1.0.2</version>
     <vendor email="mablevj@gmail.com" url="https://github.com/mablejohn/Android-String-Parser.git">VJ-Apps</vendor>
 
     <description><![CDATA[
-        <h1>Alpha release of the plugin. Basic Screen and functionality completed</h1>
-        <br/>
-        <a href="https://github.com/Haehnchen/idea-android-studio-plugin/issues">Issues</a>
-        <br/>
+        <h1>A small plugin, which helps to automate the review process of "Android Strings" file</h1>
+        <br/><a href="https://github.com/Haehnchen/idea-android-studio-plugin/issues">Issues</a><br/>
         <h2>Features</h2>
         <ul>
-            <li>"Export Android String resource" to Excel file</li>>
-            <li>Import string from excel to "Android String File"</li>
+            <li>Export the android Strings file to excel format.</li>
+            <li>Import the reviewed/translated file back to .XML format</li>
         </ul>
         ]]>
     </description>
-
     <change-notes>
         <![CDATA[
         <h2>1.0.0</h2>
         <ul>
-            <li>"Export Android String resource" to Excel file</li>>
-            <li>Import string from excel to "Android String File"</li>
+            <li>Export the android Strings file to excel format.</li>
+            <li>Import the reviewed/translated file back to .XML format</li>
         </ul>
         <h2>1.0.1</h2>
         <ul>
             <li>Plugin is compatible with Android Studio</li>
             <li>UI issue fix</li>
+        </ul>
+        <h2>1.0.2</h2>
+         <ul>
+            <li>UI changes and Bug fix</li>
         </ul>
          ]]>
     </change-notes>
@@ -55,13 +54,13 @@
                 <action id="comVjPlugin.ActionExport" class="org.rsp.parser.action.ActionExport" text="Export Resource"
                         description="Import Strings from files">
                     <keyboard-shortcut keymap="$default" first-keystroke="shift ctrl A"
-                                       second-keystroke="shift ctrl I"/>
+                                       second-keystroke="shift ctrl E"/>
                 </action>
 
                 <action id="comVjPlugin.ActionImport" class="org.rsp.parser.action.ActionImport" text="Import Resource"
                         description="Help topics">
                     <keyboard-shortcut keymap="$default" first-keystroke="shift ctrl A"
-                                       second-keystroke="shift ctrl E"/>
+                                       second-keystroke="shift ctrl I"/>
                 </action>
             </group>
         </group>
